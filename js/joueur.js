@@ -101,6 +101,7 @@
   function majAccueil() {
     const d = lireDestination();
     $('btn-destination').disabled = !d;
+    $('boutons-fin').hidden = !(!d && lireFin());
     if (!d && lireFin()) {
       $('message-titre').textContent = 'Chasse terminée !';
       $('message-texte').textContent = 'Bravo, moussaillon, tu as trouvé le grand trésor ! Rendez-vous pour une prochaine aventure.';
@@ -117,6 +118,16 @@
   }
 
   $('btn-destination').addEventListener('click', ouvrirCarte);
+
+  // Après la chasse : revenir à l'écran de départ, prêt pour la prochaine aventure.
+  $('btn-nouvelle-aventure').addEventListener('click', () => {
+    enregistrerFin(false);
+    majAccueil();
+  });
+  $('btn-revoir-tresor').addEventListener('click', () => {
+    $('celebration').hidden = false;
+    jouerCelebration();
+  });
 
   // ---------- Annonce « Nouvelle destination » ----------
 

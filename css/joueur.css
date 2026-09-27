@@ -72,6 +72,19 @@ body {
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
 }
 .parchemin p { margin: 0; }
+.parchemin-boutons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.petit-bouton {
+  flex: 1;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 3px solid var(--encre);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--encre);
+  font: 900 1rem/1.1 var(--texte, 'Nunito', sans-serif);
+  cursor: pointer;
+}
+.petit-bouton-plein { background: var(--encre); color: var(--parchemin); }
 .parchemin-titre { font-family: var(--titre); font-size: 1.5rem; color: var(--rouge); margin-bottom: 6px !important; }
 
 .actions { display: flex; flex-direction: column; gap: 14px; margin-top: auto; }

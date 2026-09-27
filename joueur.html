@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;900&display=swap">
   <link rel="stylesheet" href="js/vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/joueur.css?v=9">
+  <link rel="stylesheet" href="css/joueur.css?v=10">
 </head>
 <body>
   <main class="ecran" id="accueil">
@@ -33,6 +33,10 @@
     <section class="parchemin" id="message" aria-live="polite">
       <p class="parchemin-titre" id="message-titre">Ohé, moussaillon !</p>
       <p id="message-texte">En avant pour l’aventure ! Scanne le QR code du capitaine pour découvrir où se cache la prochaine étape du parcours.</p>
+      <div class="parchemin-boutons" id="boutons-fin" hidden>
+        <button class="petit-bouton" id="btn-revoir-tresor" type="button">Revoir le trésor</button>
+        <button class="petit-bouton petit-bouton-plein" id="btn-nouvelle-aventure" type="button">Nouvelle aventure</button>
+      </div>
     </section>
 
     <nav class="actions">
@@ -50,7 +54,7 @@
       </label>
       <input id="champ-photo" type="file" accept="image/*" capture="environment" hidden>
     </nav>
-    <p class="version">version 9</p>
+    <p class="version">version 10</p>
   </main>
 
   <!-- Scanner de QR code -->
@@ -261,6 +265,6 @@
 
   <script src="js/vendor/jsQR.js"></script>
   <script src="js/vendor/leaflet/leaflet.js"></script>
-  <script src="js/joueur.js?v=9"></script>
+  <script src="js/joueur.js?v=10"></script>
 </body>
 </html>
