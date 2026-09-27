@@ -73,14 +73,14 @@
     const d = lireDestination();
     $('btn-destination').disabled = !d;
     if (d && d.trouve) {
-      $('message-titre').textContent = 'Trésor trouvé !';
-      $('message-texte').textContent = 'Montre ton téléphone au capitaine pour découvrir la photo à reproduire, puis prends ta photo.';
+      $('message-titre').textContent = 'Tu es arrivé à bon port !';
+      $('message-texte').textContent = 'Le capitaine a un indice pour toi. Retrouve l’indice et prends-le en photo pour poursuivre l’aventure.';
     } else if (d) {
       $('message-titre').textContent = 'Cap sur le trésor !';
       $('message-texte').textContent = 'Touche « Rejoindre ma destination » pour voir la carte. Le téléphone te préviendra quand tu seras arrivé.';
     } else {
-      $('message-titre').textContent = 'Ahoy, moussaillon !';
-      $('message-texte').textContent = 'Scanne le QR code du capitaine pour découvrir où se cache le prochain trésor.';
+      $('message-titre').textContent = 'Ohé, moussaillon !';
+      $('message-texte').textContent = 'En avant pour l’aventure ! Scanne le QR code du capitaine pour découvrir où se cache la prochaine étape du parcours.';
     }
   }
 
@@ -92,7 +92,7 @@
     $('annonce-titre').textContent = dejaConnue ? 'Même destination !' : 'Nouvelle destination !';
     $('annonce-texte').textContent = dejaConnue
       ? "C'est toujours le même trésor. Continue à chercher sur la carte."
-      : "Le trésor t'attend. Trouve ton chemin sur la carte, avec un adulte.";
+      : 'Le trésor t’attend. Trouve ton chemin sur la carte. En avant, matelot !';
     $('annonce').hidden = false;
   }
   $('btn-fermer-annonce').addEventListener('click', () => ($('annonce').hidden = true));

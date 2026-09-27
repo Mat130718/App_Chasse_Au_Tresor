@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;900&display=swap">
   <link rel="stylesheet" href="js/vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/joueur.css?v=4">
+  <link rel="stylesheet" href="css/joueur.css?v=5">
 </head>
 <body>
   <main class="ecran" id="accueil">
@@ -31,8 +31,8 @@
     </header>
 
     <section class="parchemin" id="message" aria-live="polite">
-      <p class="parchemin-titre" id="message-titre">Ahoy, moussaillon !</p>
-      <p id="message-texte">Scanne le QR code du capitaine pour découvrir où se cache le prochain trésor.</p>
+      <p class="parchemin-titre" id="message-titre">Ohé, moussaillon !</p>
+      <p id="message-texte">En avant pour l’aventure ! Scanne le QR code du capitaine pour découvrir où se cache la prochaine étape du parcours.</p>
     </section>
 
     <nav class="actions">
@@ -50,7 +50,7 @@
       </label>
       <input id="champ-photo" type="file" accept="image/*" capture="environment" hidden>
     </nav>
-    <p class="version">version 4</p>
+    <p class="version">version 5</p>
   </main>
 
   <!-- Scanner de QR code -->
@@ -71,7 +71,7 @@
         <path d="M10 45h100" stroke="#f2b134" stroke-width="6"/>
       </svg>
       <p class="annonce-titre" id="annonce-titre">Nouvelle destination !</p>
-      <p class="annonce-texte" id="annonce-texte">Le trésor t'attend. Trouve ton chemin sur la carte, avec un adulte.</p>
+      <p class="annonce-texte" id="annonce-texte">Le trésor t’attend. Trouve ton chemin sur la carte. En avant, matelot !</p>
       <button class="gros-bouton bouton-carte" id="btn-voir-carte" type="button">
         <span>Voir la carte</span>
       </button>
@@ -119,6 +119,6 @@
 
   <script src="js/vendor/jsQR.js"></script>
   <script src="js/vendor/leaflet/leaflet.js"></script>
-  <script src="js/joueur.js?v=4"></script>
+  <script src="js/joueur.js?v=5"></script>
 </body>
 </html>
