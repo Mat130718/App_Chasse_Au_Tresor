@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;900&display=swap">
   <link rel="stylesheet" href="js/vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/joueur.css?v=8">
+  <link rel="stylesheet" href="css/joueur.css?v=9">
 </head>
 <body>
   <main class="ecran" id="accueil">
@@ -50,7 +50,7 @@
       </label>
       <input id="champ-photo" type="file" accept="image/*" capture="environment" hidden>
     </nav>
-    <p class="version">version 8</p>
+    <p class="version">version 9</p>
   </main>
 
   <!-- Scanner de QR code -->
@@ -112,38 +112,131 @@
     <div class="rayons" aria-hidden="true"></div>
     <canvas id="confettis" aria-hidden="true"></canvas>
     <div class="celebration-contenu">
-      <svg class="grand-coffre" viewBox="0 0 240 200" aria-hidden="true">
+      <svg class="grand-coffre" viewBox="0 0 260 240" aria-hidden="true">
         <defs>
-          <radialGradient id="lueur" cx="50%" cy="60%" r="60%">
-            <stop offset="0%" stop-color="#fff6c2"/>
-            <stop offset="55%" stop-color="#ffd24a" stop-opacity="0.9"/>
-            <stop offset="100%" stop-color="#ffd24a" stop-opacity="0"/>
+          <radialGradient id="lueur" cx="50%" cy="55%" r="55%">
+            <stop offset="0%" stop-color="#fffbe0"/>
+            <stop offset="45%" stop-color="#ffd24a" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="#ffb300" stop-opacity="0"/>
           </radialGradient>
           <linearGradient id="bois" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#b5652d"/>
-            <stop offset="100%" stop-color="#7a3a12"/>
+            <stop offset="0%" stop-color="#c0703a"/>
+            <stop offset="55%" stop-color="#9a4f22"/>
+            <stop offset="100%" stop-color="#6e3413"/>
           </linearGradient>
+          <linearGradient id="bois-couvercle" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#d0824a"/>
+            <stop offset="100%" stop-color="#8c451b"/>
+          </linearGradient>
+          <linearGradient id="bois-interieur" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#5a2a10"/>
+            <stop offset="100%" stop-color="#3a1a08"/>
+          </linearGradient>
+          <linearGradient id="fer" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stop-color="#4a4f57"/>
+            <stop offset="45%" stop-color="#9aa3ad"/>
+            <stop offset="100%" stop-color="#3b4047"/>
+          </linearGradient>
+          <linearGradient id="or" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#fff0a0"/>
+            <stop offset="45%" stop-color="#f6c233"/>
+            <stop offset="100%" stop-color="#b87b0c"/>
+          </linearGradient>
+          <radialGradient id="piece" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#fff6c0"/>
+            <stop offset="50%" stop-color="#f7c63a"/>
+            <stop offset="100%" stop-color="#b8820e"/>
+          </radialGradient>
         </defs>
-        <ellipse class="coffre-lueur" cx="120" cy="100" rx="120" ry="80" fill="url(#lueur)"/>
+
+        <!-- Ombre au sol et halo doré -->
+        <ellipse cx="130" cy="226" rx="104" ry="9" fill="#000" opacity="0.35"/>
+        <ellipse class="coffre-lueur" cx="130" cy="112" rx="130" ry="96" fill="url(#lueur)"/>
+
         <g class="coffre-tout">
-        <g class="coffre-corps">
-          <g class="coffre-or">
-            <ellipse cx="120" cy="104" rx="84" ry="16" fill="#f2b134"/>
-            <circle cx="84" cy="98" r="11" fill="#ffd566" stroke="#b8860b" stroke-width="3"/>
-            <circle cx="110" cy="92" r="11" fill="#ffd566" stroke="#b8860b" stroke-width="3"/>
-            <circle cx="138" cy="95" r="11" fill="#ffd566" stroke="#b8860b" stroke-width="3"/>
-            <circle cx="160" cy="100" r="11" fill="#ffd566" stroke="#b8860b" stroke-width="3"/>
-            <path d="M120 70 l6 14 15 1 -12 9 4 15 -13 -8 -13 8 4 -15 -12 -9 15 -1z" fill="#d1495b" stroke="#7a1f2b" stroke-width="3" stroke-linejoin="round"/>
+          <!-- Intérieur du couvercle, visible une fois ouvert -->
+          <g class="couvercle-int">
+            <path d="M38 124 L28 34 Q130 14 232 34 L222 124 Z" fill="url(#bois-interieur)" stroke="#2a1405" stroke-width="5" stroke-linejoin="round"/>
+            <path d="M34 94 Q130 80 226 94 M31 64 Q130 48 229 64" fill="none" stroke="#2a1405" stroke-width="3" opacity="0.7"/>
+            <path d="M38 124 L28 34 Q130 14 232 34 L222 124" fill="none" stroke="url(#or)" stroke-width="7" stroke-linejoin="round"/>
+            <path d="M70 120 L63 28 M190 120 L197 28" stroke="url(#fer)" stroke-width="12"/>
           </g>
-          <rect x="30" y="104" width="180" height="84" rx="10" fill="url(#bois)" stroke="#3b2a1a" stroke-width="7"/>
-          <rect x="30" y="126" width="180" height="12" fill="#f2b134" stroke="#3b2a1a" stroke-width="4"/>
-          <rect x="104" y="116" width="32" height="40" rx="6" fill="#f2b134" stroke="#3b2a1a" stroke-width="5"/>
-          <circle cx="120" cy="134" r="5" fill="#3b2a1a"/>
+
+          <!-- Le trésor -->
+          <g class="coffre-or">
+            <path d="M44 128 Q60 92 94 96 Q112 70 136 84 Q160 68 178 92 Q210 90 218 128 Z" fill="url(#or)" stroke="#9a6608" stroke-width="3"/>
+            <g stroke="#a36d0a" stroke-width="2.5">
+              <circle cx="74" cy="110" r="11" fill="url(#piece)"/>
+              <circle cx="96" cy="100" r="11" fill="url(#piece)"/>
+              <circle cx="158" cy="96" r="11" fill="url(#piece)"/>
+              <circle cx="184" cy="108" r="11" fill="url(#piece)"/>
+              <circle cx="120" cy="112" r="10" fill="url(#piece)"/>
+              <circle cx="142" cy="114" r="10" fill="url(#piece)"/>
+              <ellipse cx="204" cy="120" rx="11" ry="5" fill="url(#piece)"/>
+              <ellipse cx="58" cy="122" rx="11" ry="5" fill="url(#piece)"/>
+            </g>
+            <!-- Couronne -->
+            <g transform="translate(112 58)">
+              <path d="M0 26 L2 4 L12 16 L18 0 L24 16 L34 4 L36 26 Z" fill="url(#or)" stroke="#8a5a06" stroke-width="2.5" stroke-linejoin="round"/>
+              <rect x="0" y="24" width="36" height="7" rx="2" fill="url(#or)" stroke="#8a5a06" stroke-width="2.5"/>
+              <circle cx="18" cy="27" r="2.8" fill="#d1495b"/>
+              <circle cx="8" cy="27" r="2.2" fill="#3a9dd6"/>
+              <circle cx="28" cy="27" r="2.2" fill="#3aa35d"/>
+            </g>
+            <!-- Pierres précieuses -->
+            <path d="M82 80 l9 -8 9 8 -9 13z" fill="#d1495b" stroke="#7a1f2b" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M86 78 l5 -4 3 3z" fill="#fff" opacity="0.7"/>
+            <path d="M166 76 l10 0 5 8 -10 12 -10 -12z" fill="#2fa860" stroke="#135c32" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M168 79 l6 0 -4 5z" fill="#fff" opacity="0.6"/>
+            <path d="M200 96 l8 -9 8 9 -8 9z" fill="#3a8fd6" stroke="#174f80" stroke-width="2.5" stroke-linejoin="round"/>
+            <!-- Collier de perles qui dépasse -->
+            <path d="M58 126 Q70 150 88 132" fill="none" stroke="#fdf6ea" stroke-width="7" stroke-linecap="round" stroke-dasharray="0.1 8.5"/>
+          </g>
+
+          <!-- Caisse -->
+          <g class="coffre-corps">
+            <path d="M38 122 H222 V204 Q222 214 212 214 H48 Q38 214 38 204 Z" fill="url(#bois)" stroke="#2e1606" stroke-width="6" stroke-linejoin="round"/>
+            <path d="M41 150 H219 M41 180 H219" stroke="#5a2a0e" stroke-width="3" opacity="0.8"/>
+            <path d="M52 136 q20 -3 40 0 M120 164 q24 -3 48 0 M150 196 q18 -3 36 0 M60 196 q14 -2 28 0" fill="none" stroke="#e39a60" stroke-width="2" opacity="0.45" stroke-linecap="round"/>
+            <!-- Ferrures -->
+            <rect x="62" y="122" width="16" height="92" fill="url(#fer)" stroke="#23262b" stroke-width="3"/>
+            <rect x="182" y="122" width="16" height="92" fill="url(#fer)" stroke="#23262b" stroke-width="3"/>
+            <g fill="#d9dee3" stroke="#23262b" stroke-width="1.5">
+              <circle cx="70" cy="134" r="3"/><circle cx="70" cy="168" r="3"/><circle cx="70" cy="202" r="3"/>
+              <circle cx="190" cy="134" r="3"/><circle cx="190" cy="168" r="3"/><circle cx="190" cy="202" r="3"/>
+            </g>
+            <!-- Coins dorés -->
+            <path d="M38 190 V204 Q38 214 48 214 H62 L38 190 Z M222 190 V204 Q222 214 212 214 H198 L222 190 Z" fill="url(#or)" stroke="#2e1606" stroke-width="3" stroke-linejoin="round"/>
+            <!-- Bord doré -->
+            <rect x="34" y="118" width="192" height="12" rx="4" fill="url(#or)" stroke="#2e1606" stroke-width="4"/>
+            <!-- Serrure -->
+            <path d="M112 124 H148 V156 Q148 172 130 180 Q112 172 112 156 Z" fill="url(#or)" stroke="#2e1606" stroke-width="4" stroke-linejoin="round"/>
+            <circle cx="130" cy="146" r="6" fill="#2e1606"/>
+            <path d="M127 148 L125 162 H135 L133 148 Z" fill="#2e1606"/>
+            <path d="M118 130 Q122 128 126 130" stroke="#fff8d0" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <!-- Couvercle fermé (bombé) -->
+          <g class="couvercle-ext">
+            <path d="M34 124 Q34 50 130 46 Q226 50 226 124 Z" fill="url(#bois-couvercle)" stroke="#2e1606" stroke-width="6" stroke-linejoin="round"/>
+            <path d="M40 100 Q130 88 220 100 M52 72 Q130 60 208 72" fill="none" stroke="#5a2a0e" stroke-width="3" opacity="0.8"/>
+            <path d="M60 88 q18 -4 36 -2 M150 80 q20 -2 40 2" fill="none" stroke="#f0b07a" stroke-width="2" opacity="0.5" stroke-linecap="round"/>
+            <path d="M62 124 V62 Q64 56 70 55 H78 V124 Z M182 124 V55 H190 Q196 56 198 62 V124 Z" fill="url(#fer)" stroke="#23262b" stroke-width="3"/>
+            <g fill="#d9dee3" stroke="#23262b" stroke-width="1.5">
+              <circle cx="70" cy="74" r="3"/><circle cx="70" cy="104" r="3"/><circle cx="190" cy="74" r="3"/><circle cx="190" cy="104" r="3"/>
+            </g>
+            <rect x="30" y="114" width="200" height="12" rx="4" fill="url(#or)" stroke="#2e1606" stroke-width="4"/>
+            <path d="M118 112 H142 V128 Q130 136 118 128 Z" fill="url(#or)" stroke="#2e1606" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M70 60 Q130 44 190 60" fill="none" stroke="#f6c9a0" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
+          </g>
         </g>
-        <g class="coffre-couvercle">
-          <path d="M30 106 Q30 40 120 40 Q210 40 210 106 Z" fill="url(#bois)" stroke="#3b2a1a" stroke-width="7" stroke-linejoin="round"/>
-          <path d="M60 104 Q62 58 120 56 Q178 58 180 104" fill="none" stroke="#f2b134" stroke-width="10"/>
-        </g>
+
+        <!-- Éclats qui scintillent -->
+        <g class="eclats" fill="#fffbe0">
+          <path class="eclat" d="M40 40 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3z"/>
+          <path class="eclat" d="M222 52 l2.5 7 7 2.5 -7 2.5 -2.5 7 -2.5 -7 -7 -2.5 7 -2.5z"/>
+          <path class="eclat" d="M200 16 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z"/>
+          <path class="eclat" d="M60 8 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z"/>
         </g>
       </svg>
       <h2 class="celebration-titre">Trésor trouvé !</h2>
@@ -168,6 +261,6 @@
 
   <script src="js/vendor/jsQR.js"></script>
   <script src="js/vendor/leaflet/leaflet.js"></script>
-  <script src="js/joueur.js?v=8"></script>
+  <script src="js/joueur.js?v=9"></script>
 </body>
 </html>

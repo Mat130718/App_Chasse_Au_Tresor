@@ -262,7 +262,8 @@ body {
 #confettis { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .celebration-contenu { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; max-width: 440px; }
 .grand-coffre { width: min(78vw, 320px); height: auto; overflow: visible; }
-.coffre-couvercle { transform-box: fill-box; transform-origin: 0% 100%; }
+.couvercle-ext, .couvercle-int { transform-box: fill-box; transform-origin: 50% 100%; }
+.eclat { transform-box: fill-box; transform-origin: 50% 50%; }
 .coffre-lueur, .coffre-or { opacity: 0; transform-box: fill-box; transform-origin: 50% 100%; }
 .celebration-titre {
   margin: 0;
@@ -289,13 +290,21 @@ body {
 .celebration-boutons .gros-bouton { justify-content: center; text-align: center; }
 
 /* État final (sans animation, ou une fois l'animation terminée) */
-.celebration .coffre-couvercle { transform: translate(-6%, -34%) rotate(-28deg); }
+.celebration .couvercle-ext { opacity: 0; transform: scaleY(0); }
+.celebration .couvercle-int { opacity: 1; }
+.celebration .eclat { opacity: 1; }
 .celebration .coffre-lueur, .celebration .coffre-or { opacity: 1; }
 .celebration .rayons { opacity: 1; }
 
 @media (prefers-reduced-motion: no-preference) {
   .celebration.joue .coffre-tout { animation: coffre-arrive 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) both, coffre-tremble 0.5s 0.8s ease-in-out 2; transform-box: fill-box; transform-origin: 50% 100%; }
-  .celebration.joue .coffre-couvercle { animation: couvercle-ouvre 0.6s 1.85s cubic-bezier(0.2, 1.8, 0.4, 1) both; }
+  .celebration.joue .couvercle-ext { animation: couvercle-leve 0.22s 1.85s ease-in both; }
+  .celebration.joue .couvercle-int { animation: couvercle-bascule 0.45s 2.05s cubic-bezier(0.25, 1.7, 0.45, 1) both; }
+  .celebration.joue .eclat { animation: scintille 1.4s ease-in-out infinite both; }
+  .celebration.joue .eclat:nth-child(1) { animation-delay: 2.3s; }
+  .celebration.joue .eclat:nth-child(2) { animation-delay: 2.6s; }
+  .celebration.joue .eclat:nth-child(3) { animation-delay: 2.9s; }
+  .celebration.joue .eclat:nth-child(4) { animation-delay: 3.2s; }
   .celebration.joue .coffre-lueur { animation: lueur 1.2s 1.9s ease-out both; }
   .celebration.joue .coffre-or { animation: or-monte 0.6s 1.95s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
   .celebration.joue .rayons { animation: rayons-apparait 0.8s 1.9s ease-out both, rayons-tourne 24s 1.9s linear infinite; }
@@ -306,7 +315,9 @@ body {
 
   @keyframes coffre-arrive { from { transform: translateY(-120vh); } }
   @keyframes coffre-tremble { 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
-  @keyframes couvercle-ouvre { from { transform: none; } to { transform: translate(-6%, -34%) rotate(-28deg); } }
+  @keyframes couvercle-leve { from { opacity: 1; transform: none; } to { opacity: 1; transform: scaleY(0); } }
+  @keyframes couvercle-bascule { from { opacity: 1; transform: scaleY(0); } to { opacity: 1; transform: scaleY(1); } }
+  @keyframes scintille { 0%, 100% { opacity: 0; transform: scale(0.2) rotate(0deg); } 50% { opacity: 1; transform: scale(1.2) rotate(45deg); } }
   @keyframes lueur { 0% { opacity: 0; transform: scale(0.3); } 40% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
   @keyframes or-monte { from { opacity: 0; transform: translateY(30%) scale(0.6); } to { opacity: 1; transform: none; } }
   @keyframes rayons-apparait { from { opacity: 0; } to { opacity: 1; } }
