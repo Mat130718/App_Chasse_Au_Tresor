@@ -71,6 +71,7 @@
     etoile: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
     ampoule: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
     carte: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    melanger: '<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
     agrandir: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
   };
   function ic(nom, classe = 'ic') {
@@ -669,10 +670,13 @@
 
   let parcoursCourant = null;
   let modeTri = false;
+  let garderDepart = true;
+  let ordreAvantMelange = null;
 
   async function ouvrirParcours(id, reprendre = false) {
     parcoursCourant = await Stockage.lire(id);
     modeTri = false;
+    ordreAvantMelange = null;
     if (!parcoursCourant) return vueAccueil();
     if (reprendre && partieValide(parcoursCourant)) return vueJeu();
     vueParcours();
@@ -739,13 +743,35 @@
         p.etapes.length > 1 &&
           el(
             'button',
-            { class: modeTri ? 'btn btn-petit btn-principal' : 'btn btn-petit btn-discret', 'aria-pressed': String(modeTri), onclick: () => ((modeTri = !modeTri), vueParcours()) },
+            { class: modeTri ? 'btn btn-petit btn-principal' : 'btn btn-petit btn-discret', 'aria-pressed': String(modeTri), onclick: () => ((modeTri = !modeTri), (ordreAvantMelange = null), vueParcours()) },
             modeTri ? ic('valider') : ic('trier'),
             modeTri ? 'Terminé' : 'Réordonner'
           ),
         p.etapes.length > 0 && !modeTri && el('button', { class: 'btn btn-petit btn-discret', onclick: () => afficherQr(0) }, ic('qr'), 'QR codes')
       )
     );
+
+    if (modeTri && p.etapes.length > 2) {
+      contenu.append(
+        el(
+          'div',
+          { class: 'panneau-tri' },
+          el('p', { class: 'aide' }, 'Utilise les flèches pour déplacer une étape, ou laisse le hasard choisir l’ordre.'),
+          el(
+            'label',
+            { class: 'case-a-cocher' },
+            el('input', { type: 'checkbox', checked: garderDepart, onchange: (e) => (garderDepart = e.target.checked) }),
+            el('span', {}, `Garder « ${p.etapes[0].nom} » comme départ`)
+          ),
+          el(
+            'div',
+            { class: 'rangee' },
+            el('button', { class: 'btn btn-petit btn-principal', onclick: melangerEtapes }, ic('melanger'), 'Mélanger au hasard'),
+            ordreAvantMelange && el('button', { class: 'btn btn-petit btn-discret', onclick: annulerMelange }, ic('annuler'), 'Revenir à l’ordre d’avant')
+          )
+        )
+      );
+    }
 
     if (p.etapes.length === 0) {
       contenu.append(
@@ -851,6 +877,38 @@
       etape.photo ? el('img', { class: 'vignette', src: etape.photo, alt: '' }) : el('span', { class: 'vignette vignette-vide' }, ic('photo'), 'Photo'),
       champ
     );
+  }
+
+  // Tire un nouvel ordre au hasard (mélange de Fisher-Yates), différent de l'actuel.
+  async function melangerEtapes() {
+    const etapes = parcoursCourant.etapes;
+    const fixe = garderDepart ? 1 : 0;
+    if (etapes.length - fixe < 2) return;
+    if (!ordreAvantMelange) ordreAvantMelange = etapes.map((e) => e.id);
+    const avant = etapes.map((e) => e.id).join();
+    let reste;
+    do {
+      reste = etapes.slice(fixe);
+      for (let i = reste.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [reste[i], reste[j]] = [reste[j], reste[i]];
+      }
+    } while (etapes.slice(0, fixe).concat(reste).map((e) => e.id).join() === avant);
+    parcoursCourant.etapes = etapes.slice(0, fixe).concat(reste);
+    await sauver();
+    toast('Étapes mélangées.');
+    vueParcours();
+  }
+
+  async function annulerMelange() {
+    if (!ordreAvantMelange) return;
+    const parId = new Map(parcoursCourant.etapes.map((e) => [e.id, e]));
+    const remis = ordreAvantMelange.map((id) => parId.get(id)).filter(Boolean);
+    parcoursCourant.etapes = remis.concat(parcoursCourant.etapes.filter((e) => !remis.includes(e)));
+    ordreAvantMelange = null;
+    await sauver();
+    toast('Ordre d’avant rétabli.');
+    vueParcours();
   }
 
   async function deplacer(index, sens) {
