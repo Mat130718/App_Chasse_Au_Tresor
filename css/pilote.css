@@ -223,15 +223,20 @@ button, input, select, label.btn { font: inherit; }
   font-variant-numeric: tabular-nums;
 }
 .vignette { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; display: block; }
+.photo-etape { display: block; cursor: pointer; border-radius: 8px; }
 .vignette-vide {
-  display: grid;
-  place-items: center;
-  border: 1px dashed var(--trait);
-  color: var(--encre-2);
-  font-size: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--accent);
+  background: var(--accent-doux);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
   line-height: 1.1;
-  text-align: center;
 }
+.vignette-vide .plus { font-size: 1.4rem; line-height: 1; }
 .etape-texte {
   display: flex;
   flex-direction: column;

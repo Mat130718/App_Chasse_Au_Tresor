@@ -206,12 +206,6 @@
     );
   }
 
-  function vignette(photo, alt) {
-    return photo
-      ? el('img', { class: 'vignette', src: photo, alt })
-      : el('div', { class: 'vignette vignette-vide', 'aria-label': 'Pas encore de photo' }, 'Pas de photo');
-  }
-
   // ---------- Écran : liste des parcours ----------
 
   async function vueAccueil() {
@@ -365,6 +359,10 @@
       )
     );
 
+    if (manquantes > 0) {
+      contenu.append(el('p', { class: 'aide' }, 'Touche « + Photo » à gauche d’une étape pour prendre ou choisir la photo que les enfants devront reproduire.'));
+    }
+
     if (p.etapes.length === 0) {
       contenu.append(el('p', { class: 'vide' }, 'Ajoute la première étape : un lieu, sa position GPS et la photo que les enfants devront reproduire.'));
     }
@@ -378,7 +376,7 @@
           'li',
           { class: 'etape' },
           el('span', { class: 'numero' }, String(index + 1)),
-          vignette(etape.photo, `Photo modèle : ${etape.nom}`),
+          boutonPhotoEtape(etape, index),
           el(
             'button',
             { class: 'etape-texte', onclick: () => vueEtape(etape.id), 'aria-label': `Modifier l'étape ${index + 1} : ${etape.nom}` },
@@ -415,6 +413,37 @@
     );
 
     afficher(barre(p.nom, { retour: vueAccueil }), contenu);
+  }
+
+  // Vignette touchable : ouvre directement l'appareil photo ou la galerie.
+  function boutonPhotoEtape(etape, index) {
+    const idChamp = `photo-${etape.id}`;
+    const champ = el('input', {
+      id: idChamp,
+      type: 'file',
+      accept: 'image/*',
+      hidden: true,
+      onchange: async (e) => {
+        const fichier = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!fichier) return;
+        try {
+          etape.photo = await preparerPhoto(fichier);
+          await sauver();
+          toast(`Photo ajoutée à l'étape ${index + 1}.`);
+          vueParcours();
+        } catch (err) {
+          toast(err.message);
+        }
+      },
+    });
+    const libelle = etape.photo ? `Changer la photo de l'étape ${index + 1}` : `Ajouter une photo à l'étape ${index + 1}`;
+    return el(
+      'label',
+      { class: etape.photo ? 'photo-etape' : 'photo-etape photo-etape-vide', for: idChamp, 'aria-label': libelle, title: libelle },
+      etape.photo ? el('img', { class: 'vignette', src: etape.photo, alt: '' }) : el('span', { class: 'vignette vignette-vide' }, el('span', { class: 'plus' }, '+'), 'Photo'),
+      champ
+    );
   }
 
   async function deplacer(index, sens) {
@@ -558,7 +587,7 @@
         }
       },
     });
-    const boutonPhoto = el('label', { class: 'btn', for: 'etape-photo' }, 'Choisir une photo');
+    const boutonPhoto = el('label', { class: 'btn btn-principal', for: 'etape-photo' }, 'Choisir une photo');
     const boutonRetirer = el('button', { type: 'button', class: 'btn btn-danger-texte', onclick: () => ((brouillon.photo = null), majApercu()) }, 'Retirer la photo');
 
     const choixOrdre = el('select', { id: 'etape-ordre' });
