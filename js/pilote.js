@@ -252,6 +252,7 @@
                 ' · ',
                 `modifié le ${dateCourte(p.modifieLe)}`
               ),
+              p.partie && !p.partie.terminee && el('span', { class: 'pastille pastille-attention carte-pastille' }, 'Chasse en cours'),
               el('span', { class: 'chevron', 'aria-hidden': 'true' }, '›')
             )
           )
@@ -363,6 +364,20 @@
       contenu.append(el('p', { class: 'aide' }, 'Touche « + Photo » à gauche d’une étape pour prendre ou choisir la photo que les enfants devront reproduire.'));
     }
 
+    if (p.etapes.length > 0) {
+      const partie = partieValide(p);
+      contenu.append(
+        partie && !partie.terminee
+          ? el(
+              'div',
+              { class: 'pile-boutons' },
+              el('button', { class: 'btn btn-jeu btn-large', onclick: () => vueJeu() }, `▶ Reprendre la chasse (étape ${indexCourant(p, partie) + 1} sur ${p.etapes.length})`),
+              el('button', { class: 'btn', onclick: recommencerPartie }, 'Recommencer depuis le début')
+            )
+          : el('button', { class: 'btn btn-jeu btn-large', onclick: nouvellePartie }, '▶ Lancer la chasse')
+      );
+    }
+
     if (p.etapes.length === 0) {
       contenu.append(el('p', { class: 'vide' }, 'Ajoute la première étape : un lieu, sa position GPS et la photo que les enfants devront reproduire.'));
     }
@@ -469,6 +484,7 @@
     const copie = Stockage.cloner(parcoursCourant);
     const now = Date.now();
     Object.assign(copie, { id: Stockage.nouvelId(), nom, creeLe: now });
+    delete copie.partie;
     copie.etapes.forEach((e) => (e.id = Stockage.nouvelId()));
     await Stockage.enregistrer(copie);
     toast('Copie créée.');
@@ -659,6 +675,236 @@
     afficher(barre(existante ? `Étape ${index + 1}` : 'Nouvelle étape', { retour: vueParcours }), formulaire);
     window.scrollTo(0, 0);
     if (!existante) champNom.focus();
+  }
+
+  // ---------- Mode pilote : la chasse en cours ----------
+  // La partie est enregistrée dans le parcours (champ `partie`) pour
+  // survivre à un rechargement de la page ou à un téléphone qui se verrouille.
+  // partie = { courante: idEtape, validees: [idEtape], historique: [{ validee }], terminee }
+
+  // Nettoie la partie si des étapes ont été supprimées entre-temps.
+  function partieValide(p) {
+    const partie = p.partie;
+    if (!partie || p.etapes.length === 0) return null;
+    const ids = new Set(p.etapes.map((e) => e.id));
+    partie.validees = partie.validees.filter((id) => ids.has(id));
+    partie.historique = partie.historique.filter((h) => ids.has(h.validee));
+    if (!ids.has(partie.courante)) {
+      const suivante = prochaineAFaire(p, partie, -1);
+      if (suivante) partie.courante = suivante.id;
+      else partie.terminee = true;
+    }
+    return partie;
+  }
+
+  function indexCourant(p, partie) {
+    return Math.max(0, p.etapes.findIndex((e) => e.id === partie.courante));
+  }
+
+  // Première étape non validée après `depuisIndex`, sinon depuis le début.
+  function prochaineAFaire(p, partie, depuisIndex) {
+    const faites = new Set(partie.validees);
+    const apres = p.etapes.slice(depuisIndex + 1).find((e) => !faites.has(e.id));
+    return apres || p.etapes.find((e) => !faites.has(e.id)) || null;
+  }
+
+  async function nouvellePartie() {
+    parcoursCourant.partie = { courante: parcoursCourant.etapes[0].id, validees: [], historique: [], terminee: false };
+    await sauver();
+    vueJeu();
+  }
+
+  async function recommencerPartie() {
+    const ok = await confirmer({ titre: 'Recommencer la chasse ?', texte: 'Les étapes déjà validées repasseront à faire.', bouton: 'Recommencer', danger: false });
+    if (ok) nouvellePartie();
+  }
+
+  // Garde l'écran allumé pendant la chasse, quand le téléphone le permet.
+  let verrouEcran = null;
+  async function garderEcranAllume() {
+    try {
+      if ('wakeLock' in navigator && document.visibilityState === 'visible' && !verrouEcran) {
+        verrouEcran = await navigator.wakeLock.request('screen');
+        verrouEcran.addEventListener('release', () => (verrouEcran = null));
+      }
+    } catch (e) {
+      verrouEcran = null;
+    }
+  }
+  function libererEcran() {
+    if (verrouEcran) verrouEcran.release().catch(() => {});
+    verrouEcran = null;
+  }
+  let enJeu = false;
+  document.addEventListener('visibilitychange', () => enJeu && garderEcranAllume());
+
+  function quitterJeu() {
+    enJeu = false;
+    libererEcran();
+    vueParcours();
+  }
+
+  function vueJeu() {
+    const p = parcoursCourant;
+    const partie = partieValide(p);
+    if (!partie) return vueParcours();
+    enJeu = true;
+    garderEcranAllume();
+
+    const total = p.etapes.length;
+    const nbValidees = partie.validees.length;
+    const boutonEtapes = el('button', { class: 'btn btn-petit', onclick: afficherMenuEtapes }, 'Étapes');
+    const boutonAnnuler = el(
+      'button',
+      { class: 'btn', disabled: partie.historique.length === 0, onclick: annulerValidation },
+      '↶ Annuler'
+    );
+
+    if (partie.terminee) {
+      const fin = el(
+        'main',
+        { class: 'page page-jeu' },
+        el(
+          'div',
+          { class: 'fin' },
+          el('p', { class: 'fin-icone', 'aria-hidden': 'true' }, '★'),
+          el('h2', {}, 'Chasse terminée !'),
+          el('p', {}, `${pluriel(nbValidees, 'étape')} validée${nbValidees > 1 ? 's' : ''} sur ${total}.`)
+        ),
+        el(
+          'div',
+          { class: 'pile-boutons' },
+          el('button', { class: 'btn btn-principal btn-large', onclick: quitterJeu }, 'Retour au parcours'),
+          el('button', { class: 'btn', onclick: recommencerPartie }, 'Recommencer depuis le début')
+        )
+      );
+      afficher(barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes] }), fin, el('footer', { class: 'barre-jeu' }, boutonAnnuler));
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    const index = indexCourant(p, partie);
+    const etape = p.etapes[index];
+    const dejaValidee = partie.validees.includes(etape.id);
+
+    const contenu = el(
+      'main',
+      { class: 'page page-jeu' },
+      el(
+        'div',
+        { class: 'jeu-entete' },
+        el('p', { class: 'jeu-progression' }, `Étape ${index + 1} sur ${total} · ${nbValidees} validée${nbValidees > 1 ? 's' : ''}`),
+        el('h2', {}, etape.nom),
+        dejaValidee && el('span', { class: 'pastille pastille-ok' }, 'Déjà validée')
+      ),
+      el('div', { class: 'qr-grand', role: 'img', 'aria-label': `QR code de l'étape ${index + 1}`, html: svgQr(contenuQr(etape)) }),
+      el('p', { class: 'aide centre' }, "L'enfant scanne ce QR code avec son téléphone."),
+      el(
+        'section',
+        { class: 'photo-modele' },
+        el('h3', { class: 'sous-titre' }, 'Photo à reproduire'),
+        etape.photo
+          ? el('img', { src: etape.photo, alt: `Photo modèle : ${etape.nom}` })
+          : el('p', { class: 'apercu-vide' }, "Pas de photo pour cette étape. Tu peux en ajouter une depuis l'écran du parcours.")
+      )
+    );
+
+    const boutonValider = dejaValidee
+      ? el('button', { class: 'btn btn-principal btn-large', onclick: allerProchaine }, 'Étape suivante ›')
+      : el('button', { class: 'btn btn-valider btn-large', onclick: validerPhoto }, '✓ Photo validée');
+
+    afficher(
+      barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes] }),
+      contenu,
+      el('footer', { class: 'barre-jeu' }, boutonAnnuler, boutonValider)
+    );
+    window.scrollTo(0, 0);
+  }
+
+  async function validerPhoto() {
+    const p = parcoursCourant;
+    const partie = p.partie;
+    const index = indexCourant(p, partie);
+    const etape = p.etapes[index];
+    if (!partie.validees.includes(etape.id)) partie.validees.push(etape.id);
+    partie.historique.push({ validee: etape.id });
+    const suivante = prochaineAFaire(p, partie, index);
+    if (suivante) partie.courante = suivante.id;
+    else partie.terminee = true;
+    await sauver();
+    toast(suivante ? `Bravo ! Étape ${index + 1} validée.` : 'Dernière étape validée !');
+    vueJeu();
+  }
+
+  async function allerProchaine() {
+    const p = parcoursCourant;
+    const suivante = prochaineAFaire(p, p.partie, indexCourant(p, p.partie));
+    if (suivante) p.partie.courante = suivante.id;
+    else p.partie.terminee = true;
+    await sauver();
+    vueJeu();
+  }
+
+  // Annule la dernière validation et revient sur cette étape.
+  async function annulerValidation() {
+    const p = parcoursCourant;
+    const partie = p.partie;
+    const derniere = partie.historique.pop();
+    if (!derniere) return;
+    partie.validees = partie.validees.filter((id) => id !== derniere.validee);
+    partie.courante = derniere.validee;
+    partie.terminee = false;
+    await sauver();
+    const numero = p.etapes.findIndex((e) => e.id === derniere.validee) + 1;
+    toast(`Validation annulée : retour à l'étape ${numero}.`);
+    vueJeu();
+  }
+
+  // Menu récapitulatif : afficher directement le QR code de n'importe quelle étape.
+  function afficherMenuEtapes() {
+    const p = parcoursCourant;
+    const partie = p.partie;
+    const faites = new Set(partie.validees);
+    const fermer = () => voile.remove();
+    const liste = el('ol', { class: 'menu-etapes' });
+    p.etapes.forEach((etape, index) => {
+      const courante = !partie.terminee && etape.id === partie.courante;
+      const statut = faites.has(etape.id) ? ['Validée', 'pastille-ok'] : courante ? ['En cours', 'pastille-attention'] : ['À faire', 'pastille-neutre'];
+      liste.append(
+        el(
+          'li',
+          {},
+          el(
+            'button',
+            {
+              class: courante ? 'menu-etape menu-etape-courante' : 'menu-etape',
+              onclick: async () => {
+                partie.courante = etape.id;
+                partie.terminee = false;
+                await sauver();
+                fermer();
+                vueJeu();
+              },
+            },
+            el('span', { class: 'numero' }, String(index + 1)),
+            el('span', { class: 'menu-etape-nom' }, etape.nom),
+            el('span', { class: `pastille ${statut[1]}` }, statut[0])
+          )
+        )
+      );
+    });
+    const voile = el(
+      'div',
+      { class: 'voile voile-bas', onclick: (e) => e.target === voile && fermer() },
+      el(
+        'div',
+        { class: 'feuille', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'menu-titre' },
+        el('div', { class: 'feuille-entete' }, el('h2', { id: 'menu-titre' }, 'Étapes du parcours'), el('button', { class: 'btn btn-petit', onclick: fermer }, 'Fermer')),
+        el('p', { class: 'aide' }, "Touche une étape pour afficher son QR code, par exemple pour en sauter une si les enfants sont fatigués."),
+        liste
+      )
+    );
+    document.body.append(voile);
   }
 
   // ---------- QR code en grand ----------

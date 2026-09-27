@@ -354,3 +354,78 @@ button, input, select, label.btn { font: inherit; }
   .btn, .carte-parcours { transition: transform 0.08s ease; }
   .btn:active:not(:disabled), .carte-parcours:active { transform: scale(0.98); }
 }
+
+/* Mode pilote : la chasse en cours */
+.btn-jeu { background: var(--encre); border-color: var(--encre); color: var(--fond); }
+.btn-valider { background: var(--ok); border-color: var(--ok); color: var(--surface); flex: 2; }
+.btn-petit { min-height: 40px; padding: 6px 12px; font-size: 0.95rem; }
+.carte-pastille { align-self: flex-start; margin-top: 6px; }
+.pastille-neutre { background: var(--fond); color: var(--encre-2); }
+.centre { text-align: center; }
+
+.page-jeu { padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
+.jeu-entete { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.jeu-progression { margin: 0; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--encre-2); font-variant-numeric: tabular-nums; }
+.jeu-entete h2 { font-size: 1.4rem; }
+.page-jeu .qr-grand { max-width: 320px; }
+.photo-modele { display: flex; flex-direction: column; gap: 8px; }
+.photo-modele .sous-titre { margin-top: 0; }
+.photo-modele img { display: block; width: 100%; max-height: 420px; object-fit: contain; border-radius: var(--rayon); background: var(--surface); }
+.photo-modele .apercu-vide { margin: 0; padding: 16px; text-align: center; }
+
+.barre-jeu {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface);
+  border-top: 1px solid var(--trait);
+}
+.barre-jeu .btn { flex: 1; min-height: 56px; }
+.barre-jeu .btn-valider, .barre-jeu .btn-principal { flex: 2; }
+
+.fin { display: flex; flex-direction: column; align-items: center; gap: 8px; padding-block: 32px; text-align: center; }
+.fin-icone { margin: 0; font-size: 4rem; line-height: 1; color: var(--attention); }
+.fin h2 { font-size: 1.8rem; }
+.fin p { margin: 0; color: var(--encre-2); }
+
+/* Menu des étapes (feuille qui monte du bas) */
+.voile-bas { place-items: end center; padding: 0; }
+.feuille {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-radius: 16px 16px 0 0;
+  background: var(--surface);
+  color: var(--encre);
+}
+.feuille-entete { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.feuille-entete h2 { font-size: 1.2rem; }
+.menu-etapes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.menu-etape {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 10px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  color: var(--encre);
+  text-align: left;
+  cursor: pointer;
+}
+.menu-etape-courante { border-color: var(--accent); border-width: 2px; }
+.menu-etape-nom { font-weight: 700; overflow-wrap: anywhere; }
+body:has(.barre-jeu) .toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }

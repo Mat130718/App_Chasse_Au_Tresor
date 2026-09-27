@@ -12,8 +12,8 @@ Deux liens distincts, un par téléphone :
 
 | Bloc | Contenu | État |
 |------|---------|------|
-| 1 | Mode préparation : parcours, étapes, photos modèles, QR codes | en test |
-| 2 | Mode pilote (téléphone parent) | à faire |
+| 1 | Mode préparation : parcours, étapes, photos modèles, QR codes | validé |
+| 2 | Mode pilote (téléphone parent) : QR code, photo modèle, validation, menu des étapes, annulation | en test |
 | 3 | Mode joueur (téléphone enfant) | à faire |
 | 4 | GPS et bascule vers / depuis Google Maps | à faire |
 
