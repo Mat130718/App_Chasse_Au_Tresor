@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;900&display=swap">
   <link rel="stylesheet" href="js/vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/joueur.css?v=7">
+  <link rel="stylesheet" href="css/joueur.css?v=8">
 </head>
 <body>
   <main class="ecran" id="accueil">
@@ -50,7 +50,7 @@
       </label>
       <input id="champ-photo" type="file" accept="image/*" capture="environment" hidden>
     </nav>
-    <p class="version">version 7</p>
+    <p class="version">version 8</p>
   </main>
 
   <!-- Scanner de QR code -->
@@ -107,6 +107,55 @@
     </div>
   </section>
 
+  <!-- Grande célébration de fin de chasse -->
+  <section class="plein-ecran celebration" id="celebration" hidden aria-live="assertive">
+    <div class="rayons" aria-hidden="true"></div>
+    <canvas id="confettis" aria-hidden="true"></canvas>
+    <div class="celebration-contenu">
+      <svg class="grand-coffre" viewBox="0 0 240 200" aria-hidden="true">
+        <defs>
+          <radialGradient id="lueur" cx="50%" cy="60%" r="60%">
+            <stop offset="0%" stop-color="#fff6c2"/>
+            <stop offset="55%" stop-color="#ffd24a" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="#ffd24a" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="bois" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#b5652d"/>
+            <stop offset="100%" stop-color="#7a3a12"/>
+          </linearGradient>
+        </defs>
+        <ellipse class="coffre-lueur" cx="120" cy="100" rx="120" ry="80" fill="url(#lueur)"/>
+        <g class="coffre-tout">
+        <g class="coffre-corps">
+          <g class="coffre-or">
+            <ellipse cx="120" cy="104" rx="84" ry="16" fill="#f2b134"/>
+            <circle cx="84" cy="98" r="11" fill="#ffd566" stroke="#b8860b" stroke-width="3"/>
+            <circle cx="110" cy="92" r="11" fill="#ffd566" stroke="#b8860b" stroke-width="3"/>
+            <circle cx="138" cy="95" r="11" fill="#ffd566" stroke="#b8860b" stroke-width="3"/>
+            <circle cx="160" cy="100" r="11" fill="#ffd566" stroke="#b8860b" stroke-width="3"/>
+            <path d="M120 70 l6 14 15 1 -12 9 4 15 -13 -8 -13 8 4 -15 -12 -9 15 -1z" fill="#d1495b" stroke="#7a1f2b" stroke-width="3" stroke-linejoin="round"/>
+          </g>
+          <rect x="30" y="104" width="180" height="84" rx="10" fill="url(#bois)" stroke="#3b2a1a" stroke-width="7"/>
+          <rect x="30" y="126" width="180" height="12" fill="#f2b134" stroke="#3b2a1a" stroke-width="4"/>
+          <rect x="104" y="116" width="32" height="40" rx="6" fill="#f2b134" stroke="#3b2a1a" stroke-width="5"/>
+          <circle cx="120" cy="134" r="5" fill="#3b2a1a"/>
+        </g>
+        <g class="coffre-couvercle">
+          <path d="M30 106 Q30 40 120 40 Q210 40 210 106 Z" fill="url(#bois)" stroke="#3b2a1a" stroke-width="7" stroke-linejoin="round"/>
+          <path d="M60 104 Q62 58 120 56 Q178 58 180 104" fill="none" stroke="#f2b134" stroke-width="10"/>
+        </g>
+        </g>
+      </svg>
+      <h2 class="celebration-titre">Trésor trouvé !</h2>
+      <p class="celebration-texte">Bravo, moussaillons ! Vous êtes de vrais pirates !</p>
+      <p class="diplome" id="diplome">Grand trésor du jour</p>
+      <div class="celebration-boutons">
+        <button class="gros-bouton bouton-scan" id="btn-rejouer" type="button"><span>Encore une fois !</span></button>
+        <button class="bouton-texte" id="btn-fermer-celebration" type="button">Retour</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Photo souvenir -->
   <section class="plein-ecran photo" id="photo" hidden>
     <p class="annonce-titre">Montre ta photo au capitaine !</p>
@@ -119,6 +168,6 @@
 
   <script src="js/vendor/jsQR.js"></script>
   <script src="js/vendor/leaflet/leaflet.js"></script>
-  <script src="js/joueur.js?v=7"></script>
+  <script src="js/joueur.js?v=8"></script>
 </body>
 </html>

@@ -15,7 +15,8 @@ Deux liens distincts, un par téléphone :
 | 1 | Mode préparation : parcours, étapes, photos modèles, QR codes | validé |
 | 2 | Mode pilote (téléphone parent) : QR code, puis indice (photo), validation, menu des étapes, annulation | validé |
 | 3 | Mode joueur (téléphone enfant) : scan du QR code, photo souvenir | en test |
-| 4 | Carte intégrée (position + trésor, sans itinéraire) et arrivée détectée à 50 m | en test |
+| 4 | Carte intégrée (position + trésor, sans itinéraire) et arrivée détectée à 50 m | validé |
+| 5 | Étape « Fin de la chasse » (QR code final) et grande célébration animée côté enfant | en test |
 
 ## Fonctionnement technique
 

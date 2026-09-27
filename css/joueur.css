@@ -239,3 +239,79 @@ body {
 }
 .trouve { z-index: 20; background: radial-gradient(circle at 50% 35%, #145f7f 0%, var(--mer-profonde) 70%); }
 .coffre-ouvert { width: 160px; }
+
+/* Grande célébration de fin de chasse */
+.celebration {
+  z-index: 30;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, #1d6f93 0%, var(--mer-profonde) 60%, #04202d 100%);
+}
+.rayons {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 220vmax;
+  height: 220vmax;
+  margin: -110vmax 0 0 -110vmax;
+  background: repeating-conic-gradient(rgba(255, 214, 102, 0.22) 0deg 9deg, transparent 9deg 22deg);
+  opacity: 0;
+  border-radius: 50%;
+  -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 45%);
+  mask-image: radial-gradient(circle, #000 0%, transparent 45%);
+}
+#confettis { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.celebration-contenu { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; max-width: 440px; }
+.grand-coffre { width: min(78vw, 320px); height: auto; overflow: visible; }
+.coffre-couvercle { transform-box: fill-box; transform-origin: 0% 100%; }
+.coffre-lueur, .coffre-or { opacity: 0; transform-box: fill-box; transform-origin: 50% 100%; }
+.celebration-titre {
+  margin: 0;
+  font-family: var(--titre);
+  font-weight: 400;
+  font-size: clamp(2.4rem, 12vw, 3.6rem);
+  line-height: 1;
+  color: var(--or);
+  text-shadow: 0 4px 0 var(--encre), 0 0 24px rgba(255, 214, 102, 0.6);
+  text-wrap: balance;
+}
+.celebration-texte { margin: 0; font-size: 1.25rem; text-wrap: balance; }
+.diplome {
+  margin: 6px 0 0;
+  padding: 8px 18px;
+  border: 3px solid var(--or);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--or);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+.celebration-boutons { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; margin-top: 10px; }
+.celebration-boutons .gros-bouton { justify-content: center; text-align: center; }
+
+/* État final (sans animation, ou une fois l'animation terminée) */
+.celebration .coffre-couvercle { transform: translate(-6%, -34%) rotate(-28deg); }
+.celebration .coffre-lueur, .celebration .coffre-or { opacity: 1; }
+.celebration .rayons { opacity: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .celebration.joue .coffre-tout { animation: coffre-arrive 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) both, coffre-tremble 0.5s 0.8s ease-in-out 2; transform-box: fill-box; transform-origin: 50% 100%; }
+  .celebration.joue .coffre-couvercle { animation: couvercle-ouvre 0.6s 1.85s cubic-bezier(0.2, 1.8, 0.4, 1) both; }
+  .celebration.joue .coffre-lueur { animation: lueur 1.2s 1.9s ease-out both; }
+  .celebration.joue .coffre-or { animation: or-monte 0.6s 1.95s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+  .celebration.joue .rayons { animation: rayons-apparait 0.8s 1.9s ease-out both, rayons-tourne 24s 1.9s linear infinite; }
+  .celebration.joue .celebration-titre { animation: titre-pop 0.7s 2.2s cubic-bezier(0.3, 1.8, 0.5, 1) both, titre-danse 2.4s 3s ease-in-out infinite; }
+  .celebration.joue .celebration-texte { animation: apparait 0.5s 2.6s ease-out both; }
+  .celebration.joue .diplome { animation: apparait 0.5s 2.9s ease-out both; }
+  .celebration.joue .celebration-boutons { animation: apparait 0.5s 3.4s ease-out both; }
+
+  @keyframes coffre-arrive { from { transform: translateY(-120vh); } }
+  @keyframes coffre-tremble { 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
+  @keyframes couvercle-ouvre { from { transform: none; } to { transform: translate(-6%, -34%) rotate(-28deg); } }
+  @keyframes lueur { 0% { opacity: 0; transform: scale(0.3); } 40% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+  @keyframes or-monte { from { opacity: 0; transform: translateY(30%) scale(0.6); } to { opacity: 1; transform: none; } }
+  @keyframes rayons-apparait { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rayons-tourne { to { transform: rotate(360deg); } }
+  @keyframes titre-pop { from { opacity: 0; transform: scale(0.2) rotate(-8deg); } }
+  @keyframes titre-danse { 50% { transform: scale(1.06) rotate(-2deg); } }
+  @keyframes apparait { from { opacity: 0; transform: translateY(12px); } }
+}

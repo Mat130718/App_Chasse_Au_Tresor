@@ -5,6 +5,7 @@
 
 (() => {
   const CLE_DESTINATION = 'chasse-au-tresor:destination';
+  const CLE_FIN = 'chasse-au-tresor:fin';
   const RAYON_METRES = 50;
   // Au-delà de cette imprécision, on n'annonce pas l'arrivée (risque de fausse alerte).
   const PRECISION_MAX_METRES = 75;
@@ -44,6 +45,33 @@
     }
   }
 
+  // QR code de la fin de la chasse : joueur.html?fin=1
+  function estLienFin(texte) {
+    try {
+      return new URL(texte, window.location.href).searchParams.get('fin') === '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function lireFin() {
+    try {
+      return localStorage.getItem(CLE_FIN) === '1';
+    } catch (e) {
+      return finMemoire;
+    }
+  }
+  let finMemoire = false;
+  function enregistrerFin(fin) {
+    finMemoire = fin;
+    try {
+      if (fin) localStorage.setItem(CLE_FIN, '1');
+      else localStorage.removeItem(CLE_FIN);
+    } catch (e) {
+      /* stockage indisponible */
+    }
+  }
+
   // Distance en mètres entre deux points GPS (formule de haversine).
   function distanceMetres(a, b) {
     const R = 6371000;
@@ -61,6 +89,7 @@
   function nouvelleDestination(d) {
     const ancienne = lireDestination();
     const meme = memeDestination(ancienne, d);
+    enregistrerFin(false);
     enregistrerDestination({ lat: d.lat, lng: d.lng, scanneLe: Date.now(), trouve: meme ? !!ancienne.trouve : false });
     majAccueil();
     suivrePosition();
@@ -72,7 +101,10 @@
   function majAccueil() {
     const d = lireDestination();
     $('btn-destination').disabled = !d;
-    if (d && d.trouve) {
+    if (!d && lireFin()) {
+      $('message-titre').textContent = 'Chasse terminée !';
+      $('message-texte').textContent = 'Bravo, moussaillon, tu as trouvé le grand trésor ! Rendez-vous pour une prochaine aventure.';
+    } else if (d && d.trouve) {
       $('message-titre').textContent = 'Tu es arrivé à bon port !';
       $('message-texte').textContent = 'Le capitaine a un indice pour toi. Retrouve l’indice et prends-le en photo pour poursuivre l’aventure.';
     } else if (d) {
@@ -309,6 +341,12 @@
       const image = contexte.getImageData(0, 0, canvas.width, canvas.height);
       const code = jsQR(image.data, image.width, image.height, { inversionAttempts: 'dontInvert' });
       if (code && code.data) {
+        if (estLienFin(code.data)) {
+          if (navigator.vibrate) navigator.vibrate(120);
+          fermerScanner();
+          celebrer();
+          return;
+        }
         const d = lireLien(code.data);
         if (d) {
           if (navigator.vibrate) navigator.vibrate(120);
@@ -329,6 +367,165 @@
   $('btn-fermer-scanner').addEventListener('click', fermerScanner);
   document.addEventListener('visibilitychange', () => document.hidden && flux && fermerScanner());
 
+  // ---------- Grande célébration de fin de chasse ----------
+
+  function celebrer() {
+    arreterSuivi();
+    enregistrerDestination(null);
+    enregistrerFin(true);
+    majAccueil();
+    $('annonce').hidden = true;
+    $('trouve').hidden = true;
+    fermerCarte();
+    const jour = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    $('diplome').textContent = `Grand trésor du ${jour}`;
+    jouerCelebration();
+  }
+
+  let minuteurs = [];
+  function jouerCelebration() {
+    const ecran = $('celebration');
+    minuteurs.forEach(clearTimeout);
+    minuteurs = [];
+    ecran.hidden = false;
+    ecran.classList.remove('joue');
+    void ecran.offsetWidth; // relance les animations CSS
+    const animations = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (animations) ecran.classList.add('joue');
+    garderEcranAllume();
+    const ouverture = animations ? 1900 : 0;
+    minuteurs.push(setTimeout(() => {
+      if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 300]);
+      jouerFanfare();
+      if (animations) lancerConfettis();
+    }, ouverture));
+  }
+
+  $('btn-rejouer').addEventListener('click', jouerCelebration);
+  $('btn-fermer-celebration').addEventListener('click', () => {
+    $('celebration').hidden = true;
+    $('celebration').classList.remove('joue');
+    minuteurs.forEach(clearTimeout);
+    arreterConfettis();
+    libererEcran();
+  });
+
+  // Pièces d'or qui jaillissent du coffre, puis pluie de confettis.
+  const toile = $('confettis');
+  const pinceau = toile.getContext('2d');
+  let particules = [];
+  let animationConfettis = null;
+  let debutConfettis = 0;
+  const COULEURS = ['#f2b134', '#d1495b', '#3a9d5d', '#f6e7c1', '#62b4ca', '#ffffff'];
+
+  function lancerConfettis() {
+    const dpr = window.devicePixelRatio || 1;
+    toile.width = toile.clientWidth * dpr;
+    toile.height = toile.clientHeight * dpr;
+    pinceau.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const l = toile.clientWidth;
+    const h = toile.clientHeight;
+    const coffre = document.querySelector('.grand-coffre').getBoundingClientRect();
+    const cx = coffre.left + coffre.width / 2;
+    const cy = coffre.top + coffre.height * 0.45;
+    particules = [];
+    for (let i = 0; i < 70; i++) {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.9;
+      const vitesse = 7 + Math.random() * 9;
+      particules.push({ type: 'piece', x: cx, y: cy, vx: Math.cos(angle) * vitesse, vy: Math.sin(angle) * vitesse, r: 7 + Math.random() * 6, tour: Math.random() * 6, vtour: 0.15 + Math.random() * 0.25 });
+    }
+    for (let i = 0; i < 160; i++) {
+      particules.push({ type: 'confetti', x: Math.random() * l, y: -20 - Math.random() * h * 1.5, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 3, l: 6 + Math.random() * 6, h: 10 + Math.random() * 8, angle: Math.random() * 6, vangle: (Math.random() - 0.5) * 0.3, couleur: COULEURS[i % COULEURS.length], oscille: Math.random() * 6 });
+    }
+    debutConfettis = performance.now();
+    cancelAnimationFrame(animationConfettis);
+    animationConfettis = requestAnimationFrame(dessinerConfettis);
+  }
+
+  function dessinerConfettis(t) {
+    const l = toile.clientWidth;
+    const h = toile.clientHeight;
+    pinceau.clearRect(0, 0, l, h);
+    let vivantes = 0;
+    for (const p of particules) {
+      if (p.y > h + 40) continue;
+      vivantes++;
+      if (p.type === 'piece') {
+        p.vy += 0.35;
+        p.vx *= 0.995;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.tour += p.vtour;
+        const largeur = Math.abs(Math.cos(p.tour)) * p.r + 1.5;
+        pinceau.beginPath();
+        pinceau.ellipse(p.x, p.y, largeur, p.r, 0, 0, Math.PI * 2);
+        pinceau.fillStyle = '#ffd24a';
+        pinceau.fill();
+        pinceau.lineWidth = 2;
+        pinceau.strokeStyle = '#b8860b';
+        pinceau.stroke();
+        pinceau.beginPath();
+        pinceau.ellipse(p.x - largeur * 0.3, p.y - p.r * 0.3, largeur * 0.25, p.r * 0.25, 0, 0, Math.PI * 2);
+        pinceau.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        pinceau.fill();
+      } else {
+        p.oscille += 0.05;
+        p.x += p.vx + Math.sin(p.oscille) * 0.8;
+        p.y += p.vy;
+        p.angle += p.vangle;
+        pinceau.save();
+        pinceau.translate(p.x, p.y);
+        pinceau.rotate(p.angle);
+        pinceau.scale(1, Math.cos(p.oscille * 2));
+        pinceau.fillStyle = p.couleur;
+        pinceau.fillRect(-p.l / 2, -p.h / 2, p.l, p.h);
+        pinceau.restore();
+      }
+    }
+    if (vivantes > 0 && t - debutConfettis < 15000) animationConfettis = requestAnimationFrame(dessinerConfettis);
+    else pinceau.clearRect(0, 0, l, h);
+  }
+
+  function arreterConfettis() {
+    cancelAnimationFrame(animationConfettis);
+    pinceau.clearRect(0, 0, toile.width, toile.height);
+    particules = [];
+  }
+
+  // Petite fanfare jouée par le téléphone (le son n'est permis qu'après un toucher).
+  let audio = null;
+  document.addEventListener('pointerdown', () => {
+    try {
+      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+    } catch (e) {
+      audio = null;
+    }
+  });
+
+  function note(frequence, debut, duree, volume = 0.18, forme = 'triangle') {
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = forme;
+    osc.frequency.value = frequence;
+    gain.gain.setValueAtTime(0, debut);
+    gain.gain.linearRampToValueAtTime(volume, debut + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, debut + duree);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(debut);
+    osc.stop(debut + duree + 0.05);
+  }
+
+  function jouerFanfare() {
+    if (!audio || audio.state !== 'running') return;
+    const t = audio.currentTime + 0.05;
+    // Do Mi Sol Do, puis accord final et scintillements de pièces.
+    [523.25, 659.25, 783.99].forEach((f, i) => note(f, t + i * 0.14, 0.2));
+    [1046.5, 1318.5, 1568].forEach((f) => note(f, t + 0.45, 1.2, 0.12));
+    note(523.25, t + 0.45, 1.2, 0.12, 'sawtooth');
+    for (let i = 0; i < 8; i++) note(2000 + Math.random() * 1500, t + 0.6 + i * 0.12, 0.15, 0.05, 'sine');
+  }
+
   // ---------- Photo souvenir ----------
 
   let urlPhoto = null;
@@ -347,7 +544,10 @@
 
   // Arrivée par un QR code scanné avec l'appareil photo du téléphone.
   const depuisLien = lireLien(window.location.href);
-  if (depuisLien) {
+  if (estLienFin(window.location.href)) {
+    history.replaceState(null, '', window.location.pathname);
+    celebrer();
+  } else if (depuisLien) {
     history.replaceState(null, '', window.location.pathname);
     nouvelleDestination(depuisLien);
   } else {

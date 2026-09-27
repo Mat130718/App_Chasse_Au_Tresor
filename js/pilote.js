@@ -80,6 +80,15 @@
     return url.toString();
   }
 
+  // QR code de l'étape finale : déclenche la célébration sur le téléphone enfant.
+  function contenuQrFin() {
+    const url = new URL('joueur.html', window.location.href);
+    url.search = '';
+    url.hash = '';
+    url.searchParams.set('fin', '1');
+    return url.toString();
+  }
+
   function svgQr(texte) {
     const qr = qrcode(0, 'M');
     qr.addData(texte);
@@ -252,7 +261,7 @@
                 ' · ',
                 `modifié le ${dateCourte(p.modifieLe)}`
               ),
-              p.partie && !p.partie.terminee && el('span', { class: 'pastille pastille-attention carte-pastille' }, 'Chasse en cours'),
+              p.partie && !p.partie.cloturee && el('span', { class: 'pastille pastille-attention carte-pastille' }, 'Chasse en cours'),
               el('span', { class: 'chevron', 'aria-hidden': 'true' }, '›')
             )
           )
@@ -367,11 +376,11 @@
     if (p.etapes.length > 0) {
       const partie = partieValide(p);
       contenu.append(
-        partie && !partie.terminee
+        partie && !partie.cloturee
           ? el(
               'div',
               { class: 'pile-boutons' },
-              el('button', { class: 'btn btn-jeu btn-large', onclick: () => vueJeu() }, `▶ Reprendre la chasse (étape ${indexCourant(p, partie) + 1} sur ${p.etapes.length})`),
+              el('button', { class: 'btn btn-jeu btn-large', onclick: () => vueJeu() }, partie.terminee || partie.fin ? '▶ Reprendre la chasse (fin de la chasse)' : `▶ Reprendre la chasse (étape ${indexCourant(p, partie) + 1} sur ${p.etapes.length})`),
               el('button', { class: 'btn', onclick: recommencerPartie }, 'Recommencer depuis le début')
             )
           : el('button', { class: 'btn btn-jeu btn-large', onclick: nouvellePartie }, '▶ Lancer la chasse')
@@ -412,6 +421,22 @@
         )
       );
     });
+    if (p.etapes.length > 0) {
+      liste.append(
+        el(
+          'li',
+          { class: 'etape etape-fin' },
+          el('span', { class: 'numero numero-fin', 'aria-hidden': 'true' }, '★'),
+          el('span', { class: 'vignette vignette-fin', 'aria-hidden': 'true' }, 'Fin'),
+          el('div', { class: 'etape-texte' }, el('span', { class: 'etape-nom' }, 'Fin de la chasse'), el('span', { class: 'etape-coords' }, 'QR code final, toujours en dernier')),
+          el(
+            'div',
+            { class: 'etape-actions' },
+            el('button', { class: 'btn-qr', onclick: () => afficherQr(p.etapes.length), 'aria-label': 'QR code de la fin de la chasse', html: svgQr(contenuQrFin()) })
+          )
+        )
+      );
+    }
     contenu.append(liste);
 
     contenu.append(
@@ -711,7 +736,7 @@
   }
 
   async function nouvellePartie() {
-    parcoursCourant.partie = { courante: parcoursCourant.etapes[0].id, validees: [], historique: [], terminee: false, indice: false };
+    parcoursCourant.partie = { courante: parcoursCourant.etapes[0].id, validees: [], historique: [], terminee: false, indice: false, fin: false, cloturee: false };
     await sauver();
     vueJeu();
   }
@@ -762,8 +787,10 @@
       '↶ Annuler'
     );
 
-    if (partie.terminee) {
-      const fin = el(
+    const texteValidees = `${pluriel(nbValidees, 'étape')} validée${nbValidees > 1 ? 's' : ''} sur ${total}`;
+
+    if (partie.cloturee) {
+      const bilan = el(
         'main',
         { class: 'page page-jeu' },
         el(
@@ -771,16 +798,40 @@
           { class: 'fin' },
           el('p', { class: 'fin-icone', 'aria-hidden': 'true' }, '★'),
           el('h2', {}, 'Chasse terminée !'),
-          el('p', {}, `${pluriel(nbValidees, 'étape')} validée${nbValidees > 1 ? 's' : ''} sur ${total}.`)
+          el('p', {}, `${texteValidees}.`)
         ),
         el(
           'div',
           { class: 'pile-boutons' },
           el('button', { class: 'btn btn-principal btn-large', onclick: quitterJeu }, 'Retour au parcours'),
+          el('button', { class: 'btn', onclick: () => changerFin({ cloturee: false }) }, '‹ Revoir le QR code final'),
           el('button', { class: 'btn', onclick: recommencerPartie }, 'Recommencer depuis le début')
         )
       );
-      afficher(barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes] }), fin, el('footer', { class: 'barre-jeu' }, boutonAnnuler));
+      afficher(barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes] }), bilan);
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    // Étape finale : un QR code seul, qui déclenche la célébration chez l'enfant.
+    if (partie.terminee || partie.fin) {
+      const fin = el(
+        'main',
+        { class: 'page page-jeu' },
+        el(
+          'div',
+          { class: 'jeu-entete' },
+          el('p', { class: 'jeu-progression' }, `Étape finale · ${texteValidees}`),
+          el('h2', {}, 'Fin de la chasse')
+        ),
+        el('div', { class: 'qr-grand', role: 'img', 'aria-label': 'QR code de la fin de la chasse', html: svgQr(contenuQrFin()) }),
+        el('p', { class: 'aide centre' }, 'Fais scanner ce QR code aux enfants : une surprise les attend !')
+      );
+      afficher(
+        barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes] }),
+        fin,
+        el('footer', { class: 'barre-jeu' }, boutonAnnuler, el('button', { class: 'btn btn-valider btn-large', onclick: () => changerFin({ cloturee: true }) }, '✓ Terminer la chasse'))
+      );
       window.scrollTo(0, 0);
       return;
     }
@@ -838,6 +889,12 @@
     window.scrollTo(0, 0);
   }
 
+  async function changerFin(valeurs) {
+    Object.assign(parcoursCourant.partie, valeurs);
+    await sauver();
+    vueJeu();
+  }
+
   async function changerIndice(afficherIndice) {
     parcoursCourant.partie.indice = afficherIndice;
     await sauver();
@@ -879,6 +936,8 @@
     partie.validees = partie.validees.filter((id) => id !== derniere.validee);
     partie.courante = derniere.validee;
     partie.terminee = false;
+    partie.fin = false;
+    partie.cloturee = false;
     partie.indice = true;
     await sauver();
     const numero = p.etapes.findIndex((e) => e.id === derniere.validee) + 1;
@@ -894,7 +953,7 @@
     const fermer = () => voile.remove();
     const liste = el('ol', { class: 'menu-etapes' });
     p.etapes.forEach((etape, index) => {
-      const courante = !partie.terminee && etape.id === partie.courante;
+      const courante = !partie.terminee && !partie.fin && etape.id === partie.courante;
       const statut = faites.has(etape.id) ? ['Validée', 'pastille-ok'] : courante ? ['En cours', 'pastille-attention'] : ['À faire', 'pastille-neutre'];
       liste.append(
         el(
@@ -907,6 +966,8 @@
               onclick: async () => {
                 partie.courante = etape.id;
                 partie.terminee = false;
+                partie.fin = false;
+                partie.cloturee = false;
                 partie.indice = false;
                 await sauver();
                 fermer();
@@ -920,6 +981,30 @@
         )
       );
     });
+    const finCourante = partie.terminee || partie.fin;
+    liste.append(
+      el(
+        'li',
+        {},
+        el(
+          'button',
+          {
+            class: finCourante ? 'menu-etape menu-etape-courante' : 'menu-etape',
+            onclick: async () => {
+              partie.fin = true;
+              partie.cloturee = false;
+              partie.indice = false;
+              await sauver();
+              fermer();
+              vueJeu();
+            },
+          },
+          el('span', { class: 'numero numero-fin' }, '★'),
+          el('span', { class: 'menu-etape-nom' }, 'Fin de la chasse'),
+          el('span', { class: `pastille ${finCourante ? 'pastille-attention' : 'pastille-neutre'}` }, finCourante ? 'En cours' : 'Finale')
+        )
+      )
+    );
     const voile = el(
       'div',
       { class: 'voile voile-bas', onclick: (e) => e.target === voile && fermer() },
@@ -953,23 +1038,24 @@
     }
     function aller(sens) {
       const cible = index + sens;
-      if (cible >= 0 && cible < etapes.length) {
+      if (cible >= 0 && cible <= etapes.length) {
         index = cible;
         dessiner();
       }
     }
     function dessiner() {
+      const estFin = index === etapes.length;
       const etape = etapes[index];
       zone.replaceChildren(
-        el('p', { class: 'qr-etape' }, `Étape ${index + 1} sur ${etapes.length}`),
-        el('h2', {}, etape.nom),
-        el('div', { class: 'qr-grand', html: svgQr(contenuQr(etape)) }),
-        el('p', { class: 'qr-coords' }, texteCoords(etape)),
+        el('p', { class: 'qr-etape' }, estFin ? 'Étape finale' : `Étape ${index + 1} sur ${etapes.length}`),
+        el('h2', {}, estFin ? 'Fin de la chasse' : etape.nom),
+        el('div', { class: 'qr-grand', html: svgQr(estFin ? contenuQrFin() : contenuQr(etape)) }),
+        el('p', { class: 'qr-coords' }, estFin ? 'Déclenche la surprise finale' : texteCoords(etape)),
         el(
           'div',
           { class: 'rangee-boutons' },
           el('button', { class: 'btn', disabled: index === 0, onclick: () => aller(-1) }, '‹ Précédente'),
-          el('button', { class: 'btn', disabled: index === etapes.length - 1, onclick: () => aller(1) }, 'Suivante ›')
+          el('button', { class: 'btn', disabled: estFin, onclick: () => aller(1) }, 'Suivante ›')
         ),
         el('button', { class: 'btn btn-principal btn-large', onclick: fermer }, 'Fermer')
       );

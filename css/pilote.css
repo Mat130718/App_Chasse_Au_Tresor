@@ -429,3 +429,16 @@ button, input, select, label.btn { font: inherit; }
 .menu-etape-courante { border-color: var(--accent); border-width: 2px; }
 .menu-etape-nom { font-weight: 700; overflow-wrap: anywhere; }
 body:has(.barre-jeu) .toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+
+/* Étape finale */
+.etape-fin { border-style: dashed; border-color: var(--accent); background: var(--accent-doux); }
+.numero-fin { background: var(--accent); color: var(--accent-texte); }
+.vignette-fin {
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-texte);
+  font-weight: 700;
+}
+.etape-fin .etape-texte { cursor: default; }
