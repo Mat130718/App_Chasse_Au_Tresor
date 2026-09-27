@@ -1,5 +1,5 @@
-// Mode préparation (téléphone du parent) : créer et gérer les parcours,
-// leurs étapes, les photos modèles et les QR codes.
+// Application du capitaine (téléphone du parent) : préparer les parcours,
+// leurs étapes, les photos modèles et les QR codes, puis piloter la chasse.
 
 (() => {
   const app = document.getElementById('app');
@@ -40,12 +40,72 @@
     return noeud;
   }
 
+  // Petites icônes au trait (24 × 24), dessinées dans la couleur du texte.
+  const ICONES = {
+    retour: '<path d="M15 18l-6-6 6-6"/>',
+    chevron: '<path d="M9 6l6 6-6 6"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    menu: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
+    photo: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+    qr: '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2M14 18h2M18 18h2v2"/>',
+    lieu: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+    viser: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+    jouer: '<path d="M8 5.5v13l10.5-6.5z"/>',
+    valider: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+    annuler: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+    liste: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+    crayon: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    copier: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+    telecharger: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+    importer: '<path d="M12 15V4M7 9l5-5 5 5M5 20h14"/>',
+    poubelle: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    drapeau: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    trier: '<path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/>',
+    haut: '<path d="M6 15l6-6 6 6"/>',
+    bas: '<path d="M6 9l6 6 6-6"/>',
+    installer: '<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 7v7M9 11l3 3 3-3"/>',
+    fermer: '<path d="M6 6l12 12M18 6L6 18"/>',
+    image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5-5-8 8"/>',
+    route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8"/>',
+    partager: '<path d="M12 3v12M8 7l4-4 4 4"/><path d="M7 11H5v10h14V11h-2"/>',
+    etoile: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+    ampoule: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+    carte: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+  };
+  function ic(nom, classe = 'ic') {
+    return el('span', {
+      class: classe,
+      'aria-hidden': 'true',
+      html: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONES[nom]}</svg>`,
+    });
+  }
+
   function formaterCoord(n) {
     return Number(n).toFixed(5).replace(/0+$/, '').replace(/\.$/, '');
   }
 
   function texteCoords(etape) {
     return `${formaterCoord(etape.lat)}, ${formaterCoord(etape.lng)}`;
+  }
+
+  function distanceMetres(a, b) {
+    const R = 6371000;
+    const rad = (d) => (d * Math.PI) / 180;
+    const dLat = rad(b.lat - a.lat);
+    const dLng = rad(b.lng - a.lng);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  function texteDistance(m) {
+    if (m < 1000) return `${Math.round(m / 10) * 10} m`;
+    return `${(m / 1000).toFixed(1).replace('.', ',')} km`;
+  }
+
+  function longueurParcours(etapes) {
+    let total = 0;
+    for (let i = 1; i < etapes.length; i++) total += distanceMetres(etapes[i - 1], etapes[i]);
+    return total;
   }
 
   // Accepte « 48.8459, 2.5534 », « 48,8459 2,5534 » ou un lien Google Maps
@@ -63,10 +123,6 @@
     const lng = parseFloat(m[2]);
     if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
     return { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
-  }
-
-  function lienGoogleMaps(etape) {
-    return `https://www.google.com/maps/search/?api=1&query=${etape.lat},${etape.lng}`;
   }
 
   // Ce que contient le QR code : le lien du mode joueur avec les coordonnées
@@ -98,7 +154,7 @@
 
   function dateCourte(ms) {
     try {
-      return new Date(ms).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+      return new Date(ms).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
     } catch (e) {
       return '';
     }
@@ -205,21 +261,208 @@
     });
   }
 
-  function barre(titre, { retour, actions = [] } = {}) {
+  // Feuille qui monte du bas de l'écran : menu d'actions ou contenu libre.
+  function ouvrirFeuille(titre, ...contenu) {
+    const fermer = () => voile.remove();
+    const voile = el(
+      'div',
+      { class: 'voile voile-bas', onclick: (e) => e.target === voile && fermer() },
+      el(
+        'div',
+        { class: 'feuille', role: 'dialog', 'aria-modal': 'true', 'aria-label': titre },
+        el('div', { class: 'poignee', 'aria-hidden': 'true' }),
+        el('div', { class: 'feuille-entete' }, el('h2', {}, titre), el('button', { class: 'btn-rond', 'aria-label': 'Fermer', onclick: fermer }, ic('fermer'))),
+        ...contenu
+      )
+    );
+    document.body.append(voile);
+    return fermer;
+  }
+
+  function menuActions(titre, actions) {
+    let fermer = () => {};
+    const liste = el(
+      'div',
+      { class: 'menu-actions' },
+      actions.filter(Boolean).map((a) =>
+        a.pour
+          ? el('label', { class: 'action', for: a.pour, onclick: () => setTimeout(fermer, 0) }, ic(a.icone), el('span', {}, a.libelle))
+          : el(
+              'button',
+              {
+                class: a.danger ? 'action action-danger' : 'action',
+                onclick: () => {
+                  fermer();
+                  a.faire();
+                },
+              },
+              ic(a.icone),
+              el('span', {}, a.libelle)
+            )
+      )
+    );
+    fermer = ouvrirFeuille(titre, liste);
+  }
+
+  function barre(titre, { retour, actions = [], sousTitre } = {}) {
     return el(
       'header',
       { class: 'barre' },
-      retour ? el('button', { class: 'btn-icone', 'aria-label': 'Retour', onclick: retour }, '‹') : el('span', { class: 'marque', 'aria-hidden': 'true' }, '✕'),
-      el('h1', {}, titre),
+      retour
+        ? el('button', { class: 'btn-rond', 'aria-label': 'Retour', onclick: retour }, ic('retour'))
+        : el('img', { class: 'marque', src: 'icones/parent.svg', alt: '' }),
+      el('div', { class: 'barre-titres' }, el('h1', {}, titre), sousTitre && el('p', {}, sousTitre)),
       el('div', { class: 'barre-actions' }, actions)
     );
   }
 
+  function boutonMenu(libelle, action) {
+    return el('button', { class: 'btn-rond', 'aria-label': libelle, onclick: action }, ic('menu'));
+  }
+
+  // ---------- Cartes (Leaflet + OpenStreetMap) ----------
+
+  let cartes = [];
+  function oublierCartes() {
+    cartes.forEach((c) => c.remove());
+    cartes = [];
+  }
+
+  function fondDeCarte(carte) {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap',
+    }).addTo(carte);
+  }
+
+  function repere(texte, classe = '') {
+    return L.divIcon({ className: `repere ${classe}`, html: `<span>${texte}</span>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+  }
+
+  // Aperçu du parcours : les étapes numérotées reliées par un pointillé.
+  function dessinerApercu(zone, etapes) {
+    if (typeof L === 'undefined' || !zone.isConnected) return;
+    const carte = L.map(zone, { zoomControl: false, attributionControl: true, dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false, boxZoom: false, keyboard: false, tap: false });
+    cartes.push(carte);
+    fondDeCarte(carte);
+    const points = etapes.map((e) => [e.lat, e.lng]);
+    L.polyline(points, { color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0e5a6b', weight: 3, dashArray: '2 8', lineCap: 'round' }).addTo(carte);
+    etapes.forEach((e, i) => L.marker([e.lat, e.lng], { icon: repere(i + 1, e.photo ? '' : 'repere-vide'), keyboard: false, interactive: false }).addTo(carte));
+    if (points.length === 1) carte.setView(points[0], 16);
+    else carte.fitBounds(points, { padding: [28, 28] });
+  }
+
+  // ---------- Installation sur le téléphone ----------
+
+  let invitationInstall = null;
+  const estInstallee = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const estIos = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const CLE_INSTALL_MASQUEE = 'capitaine:install-masquee';
+
+  function installMasquee() {
+    try {
+      return localStorage.getItem(CLE_INSTALL_MASQUEE) === '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    invitationInstall = e;
+    if (vueActuelle === vueAccueil) vueAccueil();
+  });
+  window.addEventListener('appinstalled', () => {
+    invitationInstall = null;
+    toast('Application installée sur ce téléphone.');
+    if (vueActuelle === vueAccueil) vueAccueil();
+  });
+
+  async function installer() {
+    if (invitationInstall) {
+      invitationInstall.prompt();
+      const choix = await invitationInstall.userChoice.catch(() => null);
+      invitationInstall = null;
+      if (choix && choix.outcome === 'accepted') return;
+      vueAccueil();
+      return;
+    }
+    const etapes = estIos
+      ? [
+          ['partager', 'Dans Safari, touche le bouton Partager en bas de l’écran.'],
+          ['plus', 'Choisis « Sur l’écran d’accueil », puis « Ajouter ».'],
+          ['installer', 'Ouvre ensuite « Capitaine » depuis l’écran d’accueil.'],
+        ]
+      : [
+          ['menu', 'Ouvre le menu du navigateur (les trois points en haut à droite).'],
+          ['installer', 'Choisis « Installer l’application » ou « Ajouter à l’écran d’accueil ».'],
+          ['plus', 'Ouvre ensuite « Capitaine » depuis l’écran d’accueil.'],
+        ];
+    ouvrirFeuille(
+      'Installer l’application',
+      el('ol', { class: 'etapes-install' }, etapes.map(([i, t]) => el('li', {}, ic(i), el('span', {}, t)))),
+      estIos &&
+        el(
+          'p',
+          { class: 'note' },
+          'Sur iPhone, l’application installée garde ses propres données. Si tu as déjà préparé des parcours dans Safari, sauvegarde-les dans un fichier (menu d’un parcours) puis importe-les dans l’application.'
+        )
+    );
+  }
+
+  function carteInstallation() {
+    if (estInstallee() || installMasquee() || (!invitationInstall && !estIos)) return null;
+    const carte = el(
+      'section',
+      { class: 'carte-install' },
+      el('img', { src: 'icones/parent.svg', alt: '', class: 'carte-install-icone' }),
+      el('div', { class: 'carte-install-texte' }, el('h2', {}, 'Installer Capitaine'), el('p', {}, 'Une vraie application sur ton écran d’accueil, utilisable même sans réseau.')),
+      el(
+        'div',
+        { class: 'carte-install-boutons' },
+        el(
+          'button',
+          {
+            class: 'btn btn-discret btn-petit',
+            onclick: () => {
+              try {
+                localStorage.setItem(CLE_INSTALL_MASQUEE, '1');
+              } catch (e) {}
+              carte.remove();
+            },
+          },
+          'Plus tard'
+        ),
+        el('button', { class: 'btn btn-principal btn-petit', onclick: installer }, 'Installer')
+      )
+    );
+    return carte;
+  }
+
   // ---------- Écran : liste des parcours ----------
 
+  function partieEnCours(p) {
+    return p.partie && !p.partie.cloturee && p.etapes.length > 0;
+  }
+
+  function texteAvancement(p) {
+    const partie = p.partie;
+    if (partie.terminee || partie.fin) return 'Étape finale';
+    const i = Math.max(0, p.etapes.findIndex((e) => e.id === partie.courante));
+    return `Étape ${i + 1} sur ${p.etapes.length}`;
+  }
+
+  function couverture(p, classe) {
+    const photo = p.etapes.find((e) => e.photo);
+    return photo
+      ? el('span', { class: classe, style: `background-image:url(${photo.photo})` })
+      : el('span', { class: `${classe} couverture-vide` }, ic('carte'));
+  }
+
   async function vueAccueil() {
+    vueActuelle = vueAccueil;
     const tous = (await Stockage.lister()).sort((a, b) => b.modifieLe - a.modifieLe);
-    const contenu = el('main', { class: 'page' });
+    const contenu = el('main', { class: 'page page-accueil' });
 
     if (!stockageOk) {
       contenu.append(
@@ -231,19 +474,40 @@
       );
     }
 
-    contenu.append(
-      el('div', { class: 'intro' },
-        el('h2', {}, 'Mes parcours'),
-        el('p', {}, 'Prépare ici tes chasses au trésor : les lieux, les photos à reproduire et l’ordre des étapes. Tout reste enregistré sur ce téléphone.')
-      )
-    );
+    contenu.append(carteInstallation() || '');
+
+    const enCours = tous.find(partieEnCours);
+    if (enCours) {
+      contenu.append(
+        el(
+          'button',
+          { class: 'carte-en-cours', onclick: () => ouvrirParcours(enCours.id, true) },
+          el('span', { class: 'en-cours-icone' }, ic('jouer')),
+          el('span', { class: 'en-cours-texte' }, el('span', { class: 'en-cours-label' }, 'Chasse en cours'), el('span', { class: 'en-cours-nom' }, enCours.nom), el('span', { class: 'en-cours-etape' }, texteAvancement(enCours))),
+          el('span', { class: 'en-cours-action' }, 'Reprendre')
+        )
+      );
+    }
 
     if (tous.length === 0) {
-      contenu.append(el('p', { class: 'vide' }, "Aucun parcours pour l'instant."));
+      contenu.append(
+        el(
+          'section',
+          { class: 'accueil-vide' },
+          el('img', { src: 'icones/parent.svg', alt: '' }),
+          el('h2', {}, 'Prépare ta première chasse'),
+          el('p', {}, 'Choisis des lieux, prends la photo que les enfants devront reproduire, et l’application génère les QR codes.'),
+          el('button', { class: 'btn btn-principal btn-large', onclick: creerParcours }, ic('plus'), 'Nouveau parcours'),
+          el('button', { class: 'btn btn-discret', onclick: chargerExemple }, 'Essayer avec un exemple')
+        )
+      );
     } else {
+      contenu.append(el('div', { class: 'section-entete' }, el('h2', {}, 'Mes parcours'), el('span', { class: 'compteur' }, String(tous.length))));
       const liste = el('ul', { class: 'liste-parcours' });
       for (const p of tous) {
         const nbPhotos = p.etapes.filter((e) => e.photo).length;
+        const pret = p.etapes.length > 0 && nbPhotos === p.etapes.length;
+        const longueur = longueurParcours(p.etapes);
         liste.append(
           el(
             'li',
@@ -251,18 +515,21 @@
             el(
               'button',
               { class: 'carte-parcours', onclick: () => ouvrirParcours(p.id) },
-              el('span', { class: 'carte-titre' }, p.nom),
+              couverture(p, 'couverture'),
               el(
                 'span',
-                { class: 'carte-infos' },
-                pluriel(p.etapes.length, 'étape'),
-                ' · ',
-                `${nbPhotos}/${p.etapes.length} photos`,
-                ' · ',
-                `modifié le ${dateCourte(p.modifieLe)}`
+                { class: 'carte-corps' },
+                el('span', { class: 'carte-titre' }, p.nom),
+                el('span', { class: 'carte-infos' }, [pluriel(p.etapes.length, 'étape'), longueur > 0 && texteDistance(longueur), `modifié le ${dateCourte(p.modifieLe)}`].filter(Boolean).join(' · ')),
+                el(
+                  'span',
+                  { class: 'carte-etat' },
+                  partieEnCours(p)
+                    ? el('span', { class: 'pastille pastille-accent' }, 'En cours')
+                    : el('span', { class: pret ? 'pastille pastille-ok' : 'pastille pastille-attention' }, pret ? 'Prêt' : p.etapes.length ? `${nbPhotos}/${p.etapes.length} photos` : 'À compléter')
+                )
               ),
-              p.partie && !p.partie.cloturee && el('span', { class: 'pastille pastille-attention carte-pastille' }, 'Chasse en cours'),
-              el('span', { class: 'chevron', 'aria-hidden': 'true' }, '›')
+              ic('chevron', 'ic chevron')
             )
           )
         );
@@ -271,18 +538,21 @@
     }
 
     const aExemple = tous.some((p) => p.nom === EXEMPLE_NOISY.nom);
-    contenu.append(
-      el(
-        'div',
-        { class: 'pile-boutons' },
-        el('button', { class: 'btn btn-principal btn-large', onclick: creerParcours }, '+ Nouveau parcours'),
-        !aExemple && el('button', { class: 'btn', onclick: chargerExemple }, "Charger l'exemple Noisy-le-Grand (11 étapes)"),
-        el('label', { class: 'btn', for: 'import-fichier' }, 'Importer un parcours sauvegardé'),
-        el('input', { id: 'import-fichier', type: 'file', accept: '.json,application/json', hidden: true, onchange: importerParcours })
-      )
+    const champImport = el('input', { id: 'import-fichier', type: 'file', accept: '.json,application/json', hidden: true, onchange: importerParcours });
+    const menu = boutonMenu('Plus d’options', () =>
+      menuActions('Options', [
+        { icone: 'importer', libelle: 'Importer un parcours sauvegardé', pour: 'import-fichier' },
+        !aExemple && { icone: 'carte', libelle: 'Charger l’exemple Noisy-le-Grand', faire: chargerExemple },
+        !estInstallee() && { icone: 'installer', libelle: 'Installer l’application', faire: installer },
+      ])
     );
 
-    afficher(barre('Préparation'), contenu);
+    afficher(
+      barre('Capitaine', { sousTitre: 'Chasses au trésor', actions: [menu] }),
+      contenu,
+      champImport,
+      tous.length > 0 && el('button', { class: 'fab', onclick: creerParcours }, ic('plus'), 'Nouveau parcours')
+    );
   }
 
   async function creerParcours() {
@@ -342,10 +612,13 @@
   // ---------- Écran : un parcours ----------
 
   let parcoursCourant = null;
+  let modeTri = false;
 
-  async function ouvrirParcours(id) {
+  async function ouvrirParcours(id, reprendre = false) {
     parcoursCourant = await Stockage.lire(id);
+    modeTri = false;
     if (!parcoursCourant) return vueAccueil();
+    if (reprendre && partieValide(parcoursCourant)) return vueJeu();
     vueParcours();
     window.scrollTo(0, 0);
   }
@@ -355,23 +628,28 @@
   }
 
   function vueParcours() {
+    vueActuelle = vueParcours;
     const p = parcoursCourant;
     const contenu = el('main', { class: 'page' });
+    const nbPhotos = p.etapes.filter((e) => e.photo).length;
+    const manquantes = p.etapes.length - nbPhotos;
+    const longueur = longueurParcours(p.etapes);
 
-    const manquantes = p.etapes.filter((e) => !e.photo).length;
+    let zoneCarte = null;
+    if (p.etapes.length > 0) {
+      zoneCarte = el('div', { class: 'apercu-carte', role: 'img', 'aria-label': 'Carte du parcours' });
+      contenu.append(zoneCarte);
+    }
+
     contenu.append(
       el(
         'div',
-        { class: 'resume' },
-        el('span', {}, pluriel(p.etapes.length, 'étape')),
-        p.etapes.length > 0 &&
-          el('span', { class: manquantes ? 'pastille pastille-attention' : 'pastille pastille-ok' }, manquantes ? `${pluriel(manquantes, 'photo')} manquante${manquantes > 1 ? 's' : ''}` : 'Toutes les photos sont prêtes')
+        { class: 'stats' },
+        el('div', { class: 'stat' }, el('span', { class: 'stat-valeur' }, String(p.etapes.length)), el('span', { class: 'stat-label' }, p.etapes.length > 1 ? 'étapes' : 'étape')),
+        el('div', { class: 'stat' }, el('span', { class: 'stat-valeur' }, longueur ? texteDistance(longueur) : '–'), el('span', { class: 'stat-label' }, 'à vol d’oiseau')),
+        el('div', { class: manquantes ? 'stat stat-attention' : 'stat' }, el('span', { class: 'stat-valeur' }, `${nbPhotos}/${p.etapes.length}`), el('span', { class: 'stat-label' }, 'photos'))
       )
     );
-
-    if (manquantes > 0) {
-      contenu.append(el('p', { class: 'aide' }, 'Touche « + Photo » à gauche d’une étape pour prendre ou choisir la photo que les enfants devront reproduire.'));
-    }
 
     if (p.etapes.length > 0) {
       const partie = partieValide(p);
@@ -380,43 +658,72 @@
           ? el(
               'div',
               { class: 'pile-boutons' },
-              el('button', { class: 'btn btn-jeu btn-large', onclick: () => vueJeu() }, partie.terminee || partie.fin ? '▶ Reprendre la chasse (fin de la chasse)' : `▶ Reprendre la chasse (étape ${indexCourant(p, partie) + 1} sur ${p.etapes.length})`),
-              el('button', { class: 'btn', onclick: recommencerPartie }, 'Recommencer depuis le début')
+              el('button', { class: 'btn btn-jeu btn-large', onclick: () => vueJeu() }, ic('jouer'), `Reprendre la chasse · ${partie.terminee || partie.fin ? 'étape finale' : `étape ${indexCourant(p, partie) + 1}`}`),
+              el('button', { class: 'btn btn-discret', onclick: recommencerPartie }, 'Recommencer depuis le début')
             )
-          : el('button', { class: 'btn btn-jeu btn-large', onclick: nouvellePartie }, '▶ Lancer la chasse')
+          : el('button', { class: 'btn btn-jeu btn-large', onclick: nouvellePartie }, ic('jouer'), 'Lancer la chasse')
+      );
+      if (manquantes > 0) {
+        contenu.append(
+          el('p', { class: 'conseil' }, ic('ampoule'), el('span', {}, `${pluriel(manquantes, 'étape')} sans photo. Touche le carré « Photo » d’une étape pour prendre ou choisir la photo à reproduire.`))
+        );
+      }
+    }
+
+    contenu.append(
+      el(
+        'div',
+        { class: 'section-entete' },
+        el('h2', {}, 'Étapes'),
+        p.etapes.length > 1 &&
+          el(
+            'button',
+            { class: modeTri ? 'btn btn-petit btn-principal' : 'btn btn-petit btn-discret', 'aria-pressed': String(modeTri), onclick: () => ((modeTri = !modeTri), vueParcours()) },
+            modeTri ? ic('valider') : ic('trier'),
+            modeTri ? 'Terminé' : 'Réordonner'
+          ),
+        p.etapes.length > 0 && !modeTri && el('button', { class: 'btn btn-petit btn-discret', onclick: () => afficherQr(0) }, ic('qr'), 'QR codes')
+      )
+    );
+
+    if (p.etapes.length === 0) {
+      contenu.append(
+        el(
+          'div',
+          { class: 'etapes-vide' },
+          ic('lieu', 'ic ic-grand'),
+          el('p', {}, 'Ajoute la première étape : un lieu, sa position sur la carte et la photo que les enfants devront reproduire.')
+        )
       );
     }
 
-    if (p.etapes.length === 0) {
-      contenu.append(el('p', { class: 'vide' }, 'Ajoute la première étape : un lieu, sa position GPS et la photo que les enfants devront reproduire.'));
-    }
-
-    const liste = el('ol', { class: 'liste-etapes' });
+    const liste = el('ol', { class: modeTri ? 'frise frise-tri' : 'frise' });
     p.etapes.forEach((etape, index) => {
-      const premier = index === 0;
-      const dernier = index === p.etapes.length - 1;
+      const precedente = p.etapes[index - 1];
+      const infos = precedente ? `à ${texteDistance(distanceMetres(precedente, etape))} de l’étape ${index}` : 'Départ';
       liste.append(
         el(
           'li',
           { class: 'etape' },
           el('span', { class: 'numero' }, String(index + 1)),
-          boutonPhotoEtape(etape, index),
-          el(
-            'button',
-            { class: 'etape-texte', onclick: () => vueEtape(etape.id), 'aria-label': `Modifier l'étape ${index + 1} : ${etape.nom}` },
-            el('span', { class: 'etape-nom' }, etape.nom),
-            el('span', { class: 'etape-coords' }, texteCoords(etape))
-          ),
           el(
             'div',
-            { class: 'etape-actions' },
-            el('button', { class: 'btn-qr', onclick: () => afficherQr(index), 'aria-label': `QR code de l'étape ${index + 1}`, html: svgQr(contenuQr(etape)) }),
+            { class: 'etape-carte' },
+            boutonPhotoEtape(etape, index),
             el(
-              'div',
-              { class: 'fleches' },
-              el('button', { class: 'btn-fleche', disabled: premier, 'aria-label': 'Monter', onclick: () => deplacer(index, -1) }, '↑'),
-              el('button', { class: 'btn-fleche', disabled: dernier, 'aria-label': 'Descendre', onclick: () => deplacer(index, 1) }, '↓')
-            )
+              'button',
+              { class: 'etape-texte', onclick: () => vueEtape(etape.id), disabled: modeTri, 'aria-label': `Modifier l'étape ${index + 1} : ${etape.nom}` },
+              el('span', { class: 'etape-nom' }, etape.nom),
+              el('span', { class: 'etape-infos' }, infos)
+            ),
+            modeTri
+              ? el(
+                  'div',
+                  { class: 'fleches' },
+                  el('button', { class: 'btn-rond btn-rond-cadre', disabled: index === 0, 'aria-label': 'Monter', onclick: () => deplacer(index, -1) }, ic('haut')),
+                  el('button', { class: 'btn-rond btn-rond-cadre', disabled: index === p.etapes.length - 1, 'aria-label': 'Descendre', onclick: () => deplacer(index, 1) }, ic('bas'))
+                )
+              : el('button', { class: 'btn-rond', onclick: () => afficherQr(index), 'aria-label': `QR code de l'étape ${index + 1}` }, ic('qr'))
           )
         )
       );
@@ -426,33 +733,32 @@
         el(
           'li',
           { class: 'etape etape-fin' },
-          el('span', { class: 'numero numero-fin', 'aria-hidden': 'true' }, '★'),
-          el('span', { class: 'vignette vignette-fin', 'aria-hidden': 'true' }, 'Fin'),
-          el('div', { class: 'etape-texte' }, el('span', { class: 'etape-nom' }, 'Fin de la chasse'), el('span', { class: 'etape-coords' }, 'QR code final, toujours en dernier')),
+          el('span', { class: 'numero numero-fin', 'aria-hidden': 'true' }, ic('etoile')),
           el(
             'div',
-            { class: 'etape-actions' },
-            el('button', { class: 'btn-qr', onclick: () => afficherQr(p.etapes.length), 'aria-label': 'QR code de la fin de la chasse', html: svgQr(contenuQrFin()) })
+            { class: 'etape-carte' },
+            el('span', { class: 'vignette vignette-fin', 'aria-hidden': 'true' }, ic('drapeau')),
+            el('div', { class: 'etape-texte' }, el('span', { class: 'etape-nom' }, 'Fin de la chasse'), el('span', { class: 'etape-infos' }, 'QR code final, toujours en dernier')),
+            !modeTri && el('button', { class: 'btn-rond', onclick: () => afficherQr(p.etapes.length), 'aria-label': 'QR code de la fin de la chasse' }, ic('qr'))
           )
         )
       );
     }
     contenu.append(liste);
 
-    contenu.append(
-      el(
-        'div',
-        { class: 'pile-boutons' },
-        el('button', { class: 'btn btn-principal btn-large', onclick: () => vueEtape(null) }, '+ Ajouter une étape'),
-        el('h3', { class: 'sous-titre' }, 'Parcours'),
-        el('button', { class: 'btn', onclick: renommerParcours }, 'Renommer'),
-        el('button', { class: 'btn', onclick: dupliquerParcours }, 'Dupliquer (pour en faire un nouveau)'),
-        el('button', { class: 'btn', onclick: exporterParcours }, 'Sauvegarder dans un fichier'),
-        el('button', { class: 'btn btn-danger-texte', onclick: supprimerParcours }, 'Supprimer ce parcours')
-      )
+    if (!modeTri) contenu.append(el('button', { class: 'btn btn-ajout', onclick: () => vueEtape(null) }, ic('plus'), 'Ajouter une étape'));
+
+    const menu = boutonMenu('Actions du parcours', () =>
+      menuActions(p.nom, [
+        { icone: 'crayon', libelle: 'Renommer', faire: renommerParcours },
+        { icone: 'copier', libelle: 'Dupliquer pour en faire un nouveau', faire: dupliquerParcours },
+        { icone: 'telecharger', libelle: 'Sauvegarder dans un fichier', faire: exporterParcours },
+        { icone: 'poubelle', libelle: 'Supprimer ce parcours', faire: supprimerParcours, danger: true },
+      ])
     );
 
-    afficher(barre(p.nom, { retour: vueAccueil }), contenu);
+    afficher(barre(p.nom, { retour: vueAccueil, actions: [menu] }), contenu);
+    if (zoneCarte) requestAnimationFrame(() => dessinerApercu(zoneCarte, p.etapes));
   }
 
   // Vignette touchable : ouvre directement l'appareil photo ou la galerie.
@@ -481,7 +787,7 @@
     return el(
       'label',
       { class: etape.photo ? 'photo-etape' : 'photo-etape photo-etape-vide', for: idChamp, 'aria-label': libelle, title: libelle },
-      etape.photo ? el('img', { class: 'vignette', src: etape.photo, alt: '' }) : el('span', { class: 'vignette vignette-vide' }, el('span', { class: 'plus' }, '+'), 'Photo'),
+      etape.photo ? el('img', { class: 'vignette', src: etape.photo, alt: '' }) : el('span', { class: 'vignette vignette-vide' }, ic('photo'), 'Photo'),
       champ
     );
   }
@@ -540,6 +846,7 @@
   // ---------- Écran : ajouter ou modifier une étape ----------
 
   function vueEtape(etapeId) {
+    vueActuelle = null;
     const p = parcoursCourant;
     const index = etapeId ? p.etapes.findIndex((e) => e.id === etapeId) : -1;
     const existante = index >= 0 ? p.etapes[index] : null;
@@ -557,46 +864,89 @@
       autocomplete: 'off',
     });
     const aideCoords = el('p', { class: 'aide', id: 'aide-coords' });
-    const lienVerif = el('a', { class: 'lien', target: '_blank', rel: 'noopener', hidden: true }, 'Vérifier sur Google Maps ↗');
 
-    function majCoords() {
+    // Carte : toucher un endroit place l'étape ; le repère se déplace au doigt.
+    const zoneCarte = el('div', { class: 'carte-choix', role: 'application', 'aria-label': 'Carte : touche un endroit pour y placer l’étape' });
+    let carte = null;
+    let marqueur = null;
+    let cercle = null;
+    function placerSurCarte(recentrer) {
+      if (!carte) return;
+      if (brouillon.lat === null) {
+        if (marqueur) {
+          marqueur.remove();
+          cercle.remove();
+        }
+        marqueur = cercle = null;
+        return;
+      }
+      const pt = [brouillon.lat, brouillon.lng];
+      if (!marqueur) {
+        cercle = L.circle(pt, { radius: RAYON_METRES, color: '#0e5a6b', weight: 1.5, fillOpacity: 0.12, interactive: false }).addTo(carte);
+        marqueur = L.marker(pt, { draggable: true, icon: repere(existante ? index + 1 : positionInitiale, 'repere-actif'), autoPan: true }).addTo(carte);
+        marqueur.on('drag', () => cercle.setLatLng(marqueur.getLatLng()));
+        marqueur.on('dragend', () => poser(marqueur.getLatLng(), false));
+      } else {
+        marqueur.setLatLng(pt);
+        cercle.setLatLng(pt);
+      }
+      if (recentrer) carte.setView(pt, Math.max(carte.getZoom(), 17));
+    }
+    function poser(latlng, recentrer) {
+      champCoords.value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+      majCoords(recentrer);
+    }
+    function creerCarteChoix() {
+      if (typeof L === 'undefined' || !zoneCarte.isConnected) return;
+      carte = L.map(zoneCarte, { zoomControl: true, attributionControl: true, tap: false });
+      cartes.push(carte);
+      fondDeCarte(carte);
+      const autres = p.etapes.filter((e) => e.id !== brouillon.id);
+      autres.forEach((e) => L.marker([e.lat, e.lng], { icon: repere(p.etapes.indexOf(e) + 1, 'repere-autre'), interactive: false, keyboard: false }).addTo(carte));
+      if (brouillon.lat !== null) carte.setView([brouillon.lat, brouillon.lng], 17);
+      else if (autres.length) carte.setView([autres[autres.length - 1].lat, autres[autres.length - 1].lng], 16);
+      else carte.setView([46.6, 2.4], 5);
+      carte.on('click', (e) => poser(e.latlng, false));
+      placerSurCarte(false);
+    }
+
+    function majCoords(recentrer = true) {
       const c = lireCoords(champCoords.value);
       champCoords.classList.toggle('invalide', !!champCoords.value.trim() && !c);
       if (c) {
         brouillon.lat = c.lat;
         brouillon.lng = c.lng;
-        aideCoords.textContent = `Position retenue : ${texteCoords(c)}. Les enfants devront arriver à moins de ${RAYON_METRES} m.`;
-        lienVerif.href = lienGoogleMaps(c);
-        lienVerif.hidden = false;
+        aideCoords.textContent = `Les enfants devront arriver à moins de ${RAYON_METRES} m de ce point (le cercle sur la carte).`;
       } else {
         brouillon.lat = brouillon.lng = null;
         aideCoords.textContent = champCoords.value.trim()
           ? 'Position non reconnue. Écris la latitude puis la longitude, par exemple 48.8459, 2.5534.'
-          : 'Dans Google Maps, appuie longuement sur le lieu : les coordonnées s’affichent, copie-les ici. Tu peux aussi coller le lien de partage.';
-        lienVerif.hidden = true;
+          : 'Touche la carte à l’endroit voulu, utilise ta position, ou colle des coordonnées ou un lien Google Maps ci-dessous.';
       }
+      placerSurCarte(recentrer);
     }
-    champCoords.addEventListener('input', majCoords);
+    champCoords.addEventListener('input', () => majCoords(true));
 
-    const boutonPosition = el('button', { type: 'button', class: 'btn', onclick: utiliserMaPosition }, '📍 Utiliser ma position actuelle');
+    const boutonPosition = el('button', { type: 'button', class: 'btn btn-petit', onclick: utiliserMaPosition }, ic('viser'), 'Ma position');
     function utiliserMaPosition() {
       if (!navigator.geolocation) {
         toast("Ce téléphone ne donne pas accès à la position.");
         return;
       }
       boutonPosition.disabled = true;
-      boutonPosition.textContent = 'Recherche de la position…';
+      boutonPosition.lastChild.textContent = 'Recherche…';
+      const fin = () => {
+        boutonPosition.disabled = false;
+        boutonPosition.lastChild.textContent = 'Ma position';
+      };
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          champCoords.value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
-          majCoords();
-          boutonPosition.disabled = false;
-          boutonPosition.textContent = '📍 Utiliser ma position actuelle';
+          fin();
+          poser({ lat: pos.coords.latitude, lng: pos.coords.longitude }, true);
           toast(`Position trouvée (précision ± ${Math.round(pos.coords.accuracy)} m).`);
         },
         (err) => {
-          boutonPosition.disabled = false;
-          boutonPosition.textContent = '📍 Utiliser ma position actuelle';
+          fin();
           toast(err.code === 1 ? "L'accès à la position a été refusé. Autorise-le dans les réglages du navigateur." : "Position introuvable pour l'instant. Réessaie à l'extérieur.");
         },
         { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
@@ -606,9 +956,11 @@
     const apercu = el('div', { class: 'apercu-photo' });
     function majApercu() {
       apercu.replaceChildren(
-        brouillon.photo ? el('img', { src: brouillon.photo, alt: 'Photo modèle' }) : el('div', { class: 'apercu-vide' }, 'Aucune photo pour cette étape')
+        brouillon.photo
+          ? el('img', { src: brouillon.photo, alt: 'Photo modèle' })
+          : el('label', { class: 'apercu-vide', for: 'etape-photo' }, ic('image', 'ic ic-grand'), el('span', {}, 'Ajouter la photo à reproduire'))
       );
-      boutonPhoto.textContent = brouillon.photo ? 'Changer la photo' : 'Choisir une photo';
+      boutonPhoto.lastChild.textContent = brouillon.photo ? 'Changer' : 'Ajouter';
       boutonRetirer.hidden = !brouillon.photo;
     }
     const champPhoto = el('input', {
@@ -628,8 +980,8 @@
         }
       },
     });
-    const boutonPhoto = el('label', { class: 'btn btn-principal', for: 'etape-photo' }, 'Choisir une photo');
-    const boutonRetirer = el('button', { type: 'button', class: 'btn btn-danger-texte', onclick: () => ((brouillon.photo = null), majApercu()) }, 'Retirer la photo');
+    const boutonPhoto = el('label', { class: 'btn btn-petit', for: 'etape-photo' }, ic('photo'), el('span', {}, 'Ajouter'));
+    const boutonRetirer = el('button', { type: 'button', class: 'btn btn-petit btn-danger-texte', onclick: () => ((brouillon.photo = null), majApercu()) }, 'Retirer');
 
     const choixOrdre = el('select', { id: 'etape-ordre' });
     for (let i = 1; i <= total; i++) {
@@ -638,31 +990,26 @@
 
     const formulaire = el(
       'form',
-      { class: 'page formulaire', onsubmit: (e) => (e.preventDefault(), enregistrerEtape()) },
-      el('div', { class: 'champ' }, el('label', { for: 'etape-nom' }, 'Nom du lieu'), champNom),
+      { class: 'page formulaire page-avec-pied', onsubmit: (e) => (e.preventDefault(), enregistrerEtape()) },
+      el('section', { class: 'bloc' }, el('label', { class: 'bloc-titre', for: 'etape-nom' }, 'Nom du lieu'), champNom),
       el(
-        'div',
-        { class: 'champ' },
-        el('label', { for: 'etape-coords' }, 'Position GPS'),
-        champCoords,
+        'section',
+        { class: 'bloc' },
+        el('div', { class: 'bloc-entete' }, el('span', { class: 'bloc-titre' }, 'Emplacement'), boutonPosition),
+        zoneCarte,
         aideCoords,
-        el('div', { class: 'rangee' }, boutonPosition, lienVerif)
+        el('details', { class: 'saisie-coords' }, el('summary', {}, 'Saisir des coordonnées'), el('label', { class: 'visuel-cache', for: 'etape-coords' }, 'Coordonnées GPS'), champCoords)
       ),
       el(
-        'div',
-        { class: 'champ' },
-        el('span', { class: 'etiquette' }, 'Photo modèle à reproduire'),
+        'section',
+        { class: 'bloc' },
+        el('div', { class: 'bloc-entete' }, el('span', { class: 'bloc-titre' }, 'Photo à reproduire'), el('div', { class: 'rangee' }, boutonRetirer, boutonPhoto)),
         apercu,
-        el('div', { class: 'rangee' }, boutonPhoto, boutonRetirer),
         champPhoto
       ),
-      el('div', { class: 'champ' }, el('label', { for: 'etape-ordre' }, 'Place dans le parcours'), choixOrdre),
-      el(
-        'div',
-        { class: 'pile-boutons' },
-        el('button', { type: 'submit', class: 'btn btn-principal btn-large' }, existante ? 'Enregistrer' : "Ajouter l'étape"),
-        existante && el('button', { type: 'button', class: 'btn btn-danger-texte', onclick: supprimerEtape }, 'Supprimer cette étape')
-      )
+      el('section', { class: 'bloc' }, el('label', { class: 'bloc-titre', for: 'etape-ordre' }, 'Place dans le parcours'), choixOrdre),
+      existante && el('button', { type: 'button', class: 'btn btn-discret btn-danger-texte', onclick: supprimerEtape }, ic('poubelle'), 'Supprimer cette étape'),
+      el('footer', { class: 'pied-action' }, el('button', { type: 'submit', class: 'btn btn-principal btn-large' }, existante ? 'Enregistrer' : "Ajouter l'étape"))
     );
 
     async function enregistrerEtape() {
@@ -673,8 +1020,8 @@
         return;
       }
       if (brouillon.lat === null) {
-        toast('Indique la position GPS du lieu.');
-        champCoords.focus();
+        toast('Place l’étape sur la carte.');
+        zoneCarte.scrollIntoView({ block: 'center', behavior: 'smooth' });
         return;
       }
       const etapes = p.etapes.filter((e) => e.id !== brouillon.id);
@@ -695,11 +1042,11 @@
       vueParcours();
     }
 
-    majCoords();
+    majCoords(false);
     majApercu();
-    afficher(barre(existante ? `Étape ${index + 1}` : 'Nouvelle étape', { retour: vueParcours }), formulaire);
+    afficher(barre(existante ? `Étape ${index + 1}` : 'Nouvelle étape', { retour: vueParcours, sousTitre: p.nom }), formulaire);
+    requestAnimationFrame(creerCarteChoix);
     window.scrollTo(0, 0);
-    if (!existante) champNom.focus();
   }
 
   // ---------- Mode pilote : la chasse en cours ----------
@@ -771,7 +1118,20 @@
     vueParcours();
   }
 
+  // Barre de progression : une case par étape, plus l'étape finale.
+  function progression(p, partie) {
+    const faites = new Set(partie.validees);
+    const finCourante = partie.terminee || partie.fin;
+    return el(
+      'div',
+      { class: 'progression', 'aria-hidden': 'true' },
+      p.etapes.map((e) => el('span', { class: faites.has(e.id) ? 'case case-faite' : !finCourante && e.id === partie.courante ? 'case case-courante' : 'case' })),
+      el('span', { class: partie.cloturee ? 'case case-fin case-faite' : finCourante ? 'case case-fin case-courante' : 'case case-fin' })
+    );
+  }
+
   function vueJeu() {
+    vueActuelle = vueJeu;
     const p = parcoursCourant;
     const partie = partieValide(p);
     if (!partie) return vueParcours();
@@ -780,11 +1140,13 @@
 
     const total = p.etapes.length;
     const nbValidees = partie.validees.length;
-    const boutonEtapes = el('button', { class: 'btn btn-petit', onclick: afficherMenuEtapes }, 'Étapes');
+    const boutonEtapes = el('button', { class: 'btn-rond', 'aria-label': 'Toutes les étapes', onclick: afficherMenuEtapes }, ic('liste'));
+    const entetePartie = (...contenu) => el('div', { class: 'jeu-entete' }, progression(p, partie), ...contenu);
     const boutonAnnuler = el(
       'button',
       { class: 'btn', disabled: partie.historique.length === 0, onclick: annulerValidation },
-      '↶ Annuler'
+      ic('annuler'),
+      'Annuler'
     );
 
     const texteValidees = `${pluriel(nbValidees, 'étape')} validée${nbValidees > 1 ? 's' : ''} sur ${total}`;
@@ -796,7 +1158,8 @@
         el(
           'div',
           { class: 'fin' },
-          el('p', { class: 'fin-icone', 'aria-hidden': 'true' }, '★'),
+          progression(p, partie),
+          el('span', { class: 'fin-icone', 'aria-hidden': 'true' }, ic('etoile')),
           el('h2', {}, 'Chasse terminée !'),
           el('p', {}, `${texteValidees}.`)
         ),
@@ -804,11 +1167,11 @@
           'div',
           { class: 'pile-boutons' },
           el('button', { class: 'btn btn-principal btn-large', onclick: quitterJeu }, 'Retour au parcours'),
-          el('button', { class: 'btn', onclick: () => changerFin({ cloturee: false }) }, '‹ Revoir le QR code final'),
-          el('button', { class: 'btn', onclick: recommencerPartie }, 'Recommencer depuis le début')
+          el('button', { class: 'btn', onclick: () => changerFin({ cloturee: false }) }, ic('qr'), 'Revoir le QR code final'),
+          el('button', { class: 'btn btn-discret', onclick: recommencerPartie }, 'Recommencer depuis le début')
         )
       );
-      afficher(barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes] }), bilan);
+      afficher(barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes], sousTitre: 'Chasse terminée' }), bilan);
       window.scrollTo(0, 0);
       return;
     }
@@ -818,19 +1181,14 @@
       const fin = el(
         'main',
         { class: 'page page-jeu' },
-        el(
-          'div',
-          { class: 'jeu-entete' },
-          el('p', { class: 'jeu-progression' }, `Étape finale · ${texteValidees}`),
-          el('h2', {}, 'Fin de la chasse')
-        ),
+        entetePartie(el('p', { class: 'jeu-progression' }, `Étape finale · ${texteValidees}`), el('h2', {}, 'Fin de la chasse')),
         el('div', { class: 'qr-grand', role: 'img', 'aria-label': 'QR code de la fin de la chasse', html: svgQr(contenuQrFin()) }),
         el('p', { class: 'aide centre' }, 'Fais scanner ce QR code aux enfants : une surprise les attend !')
       );
       afficher(
-        barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes] }),
+        barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes], sousTitre: 'Chasse en cours' }),
         fin,
-        el('footer', { class: 'barre-jeu' }, boutonAnnuler, el('button', { class: 'btn btn-valider btn-large', onclick: () => changerFin({ cloturee: true }) }, '✓ Terminer la chasse'))
+        el('footer', { class: 'barre-jeu' }, boutonAnnuler, el('button', { class: 'btn btn-valider btn-large', onclick: () => changerFin({ cloturee: true }) }, ic('valider'), 'Terminer la chasse'))
       );
       window.scrollTo(0, 0);
       return;
@@ -843,9 +1201,7 @@
     // Deux temps par étape : d'abord le QR code seul (l'enfant part vers le lieu),
     // puis, une fois sur place, l'indice (la photo à reproduire) et la validation.
     const indice = !!partie.indice;
-    const entete = el(
-      'div',
-      { class: 'jeu-entete' },
+    const entete = entetePartie(
       el('p', { class: 'jeu-progression' }, `Étape ${index + 1} sur ${total} · ${nbValidees} validée${nbValidees > 1 ? 's' : ''}`),
       el('h2', {}, etape.nom),
       dejaValidee && el('span', { class: 'pastille pastille-ok' }, 'Déjà validée')
@@ -859,13 +1215,13 @@
           el(
             'section',
             { class: 'photo-modele' },
-            el('h3', { class: 'sous-titre centre' }, 'Indice : la photo à reproduire'),
+            el('h3', { class: 'sous-titre centre' }, ic('image'), 'Indice : la photo à reproduire'),
             etape.photo
               ? el('img', { src: etape.photo, alt: `Photo modèle : ${etape.nom}` })
               : el('p', { class: 'apercu-vide' }, "Pas de photo pour cette étape. Tu peux en ajouter une depuis l'écran du parcours.")
           ),
           el('p', { class: 'aide centre' }, 'Quand la photo de l’enfant ressemble au modèle, valide-la pour afficher le QR code suivant.'),
-          el('button', { class: 'btn', onclick: () => changerIndice(false) }, '‹ Revoir le QR code')
+          el('button', { class: 'btn btn-discret', onclick: () => changerIndice(false) }, ic('qr'), 'Revoir le QR code')
         )
       : el(
           'main',
@@ -876,13 +1232,13 @@
         );
 
     const boutonAction = dejaValidee
-      ? el('button', { class: 'btn btn-principal btn-large', onclick: allerProchaine }, 'Étape suivante ›')
+      ? el('button', { class: 'btn btn-principal btn-large', onclick: allerProchaine }, 'Étape suivante', ic('chevron'))
       : indice
-        ? el('button', { class: 'btn btn-valider btn-large', onclick: validerPhoto }, '✓ Photo validée')
-        : el('button', { class: 'btn btn-principal btn-large', onclick: () => changerIndice(true) }, 'Indice');
+        ? el('button', { class: 'btn btn-valider btn-large', onclick: validerPhoto }, ic('valider'), 'Photo validée')
+        : el('button', { class: 'btn btn-principal btn-large', onclick: () => changerIndice(true) }, ic('ampoule'), 'Indice');
 
     afficher(
-      barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes] }),
+      barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes], sousTitre: 'Chasse en cours' }),
       contenu,
       el('footer', { class: 'barre-jeu' }, boutonAnnuler, boutonAction)
     );
@@ -950,7 +1306,7 @@
     const p = parcoursCourant;
     const partie = p.partie;
     const faites = new Set(partie.validees);
-    const fermer = () => voile.remove();
+    let fermer = () => {};
     const liste = el('ol', { class: 'menu-etapes' });
     p.etapes.forEach((etape, index) => {
       const courante = !partie.terminee && !partie.fin && etape.id === partie.courante;
@@ -999,24 +1355,13 @@
               vueJeu();
             },
           },
-          el('span', { class: 'numero numero-fin' }, '★'),
+          el('span', { class: 'numero numero-fin' }, ic('etoile')),
           el('span', { class: 'menu-etape-nom' }, 'Fin de la chasse'),
           el('span', { class: `pastille ${finCourante ? 'pastille-attention' : 'pastille-neutre'}` }, finCourante ? 'En cours' : 'Finale')
         )
       )
     );
-    const voile = el(
-      'div',
-      { class: 'voile voile-bas', onclick: (e) => e.target === voile && fermer() },
-      el(
-        'div',
-        { class: 'feuille', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'menu-titre' },
-        el('div', { class: 'feuille-entete' }, el('h2', { id: 'menu-titre' }, 'Étapes du parcours'), el('button', { class: 'btn btn-petit', onclick: fermer }, 'Fermer')),
-        el('p', { class: 'aide' }, "Touche une étape pour afficher son QR code, par exemple pour en sauter une si les enfants sont fatigués."),
-        liste
-      )
-    );
-    document.body.append(voile);
+    fermer = ouvrirFeuille('Étapes du parcours', el('p', { class: 'aide' }, 'Touche une étape pour afficher son QR code, par exemple pour en sauter une si les enfants sont fatigués.'), liste);
   }
 
   // ---------- QR code en grand ----------
@@ -1054,8 +1399,8 @@
         el(
           'div',
           { class: 'rangee-boutons' },
-          el('button', { class: 'btn', disabled: index === 0, onclick: () => aller(-1) }, '‹ Précédente'),
-          el('button', { class: 'btn', disabled: estFin, onclick: () => aller(1) }, 'Suivante ›')
+          el('button', { class: 'btn', disabled: index === 0, onclick: () => aller(-1) }, ic('retour'), 'Précédente'),
+          el('button', { class: 'btn', disabled: estFin, onclick: () => aller(1) }, 'Suivante', ic('chevron'))
         ),
         el('button', { class: 'btn btn-principal btn-large', onclick: fermer }, 'Fermer')
       );
@@ -1067,8 +1412,15 @@
 
   // ---------- Démarrage ----------
 
+  let vueActuelle = null;
+
   function afficher(...noeuds) {
-    app.replaceChildren(...noeuds);
+    oublierCartes();
+    app.replaceChildren(...noeuds.filter(Boolean));
+  }
+
+  if ('serviceWorker' in navigator && window.isSecureContext) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 
   let stockageOk = true;

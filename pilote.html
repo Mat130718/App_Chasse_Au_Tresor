@@ -3,18 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Chasse au trésor – Parent</title>
-  <meta name="theme-color" content="#0f5c73">
+  <title>Capitaine – Chasse au trésor</title>
+  <meta name="description" content="Préparer et piloter les chasses au trésor des enfants.">
+  <meta name="theme-color" content="#f3f5f4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e1518" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Capitaine">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest-pilote.webmanifest">
+  <link rel="icon" href="icones/parent.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icones/parent-apple-touch.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
-  <link rel="stylesheet" href="css/pilote.css?v=4">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="js/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/pilote.css?v=5">
 </head>
 <body>
   <div id="app"></div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script src="js/vendor/qrcode.js"></script>
+  <script src="js/vendor/leaflet/leaflet.js"></script>
   <script src="js/stockage.js?v=3"></script>
-  <script src="js/pilote.js?v=4"></script>
+  <script src="js/pilote.js?v=5"></script>
 </body>
 </html>
