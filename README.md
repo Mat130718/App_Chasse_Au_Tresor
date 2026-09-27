@@ -14,8 +14,8 @@ Deux liens distincts, un par téléphone :
 |------|---------|------|
 | 1 | Mode préparation : parcours, étapes, photos modèles, QR codes | validé |
 | 2 | Mode pilote (téléphone parent) : QR code, puis indice (photo), validation, menu des étapes, annulation | validé |
-| 3 | Mode joueur (téléphone enfant) : scan du QR code, ouverture de Google Maps, photo souvenir | en test |
-| 4 | GPS et bascule vers / depuis Google Maps | à faire |
+| 3 | Mode joueur (téléphone enfant) : scan du QR code, photo souvenir | en test |
+| 4 | Carte intégrée (position + trésor, sans itinéraire) et arrivée détectée à 50 m | en test |
 
 ## Fonctionnement technique
 
@@ -25,6 +25,7 @@ Deux liens distincts, un par téléphone :
 - Chaque QR code contient le lien du mode joueur avec les seules coordonnées de l'étape :
   `joueur.html?lat=48.8459&lng=2.5534`. Scanné avec l'appareil photo du téléphone enfant, il ouvre directement le mode joueur.
 - Génération des QR codes : [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (licence MIT), copié dans `js/vendor/`.
+- Carte du mode joueur : [Leaflet](https://leafletjs.com) (licence BSD-2), copié dans `js/vendor/leaflet/`, avec les fonds de carte OpenStreetMap.
 - Lecture des QR codes dans le mode joueur : [jsQR](https://github.com/cozmo/jsQR) (licence Apache 2.0), copié dans `js/vendor/`.
 - Le téléphone enfant ne garde que la dernière destination scannée (localStorage).
 

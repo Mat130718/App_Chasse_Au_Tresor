@@ -15,7 +15,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;900&display=swap">
-  <link rel="stylesheet" href="css/joueur.css?v=3">
+  <link rel="stylesheet" href="js/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/joueur.css?v=4">
 </head>
 <body>
   <main class="ecran" id="accueil">
@@ -49,7 +50,7 @@
       </label>
       <input id="champ-photo" type="file" accept="image/*" capture="environment" hidden>
     </nav>
-    <p class="version">version 3</p>
+    <p class="version">version 4</p>
   </main>
 
   <!-- Scanner de QR code -->
@@ -71,10 +72,38 @@
       </svg>
       <p class="annonce-titre" id="annonce-titre">Nouvelle destination !</p>
       <p class="annonce-texte" id="annonce-texte">Le trésor t'attend. Trouve ton chemin sur la carte, avec un adulte.</p>
-      <a class="gros-bouton bouton-carte" id="lien-maps" href="#" target="_blank" rel="noopener">
-        <span>Rejoindre ma destination</span>
-      </a>
+      <button class="gros-bouton bouton-carte" id="btn-voir-carte" type="button">
+        <span>Voir la carte</span>
+      </button>
       <button class="bouton-texte" id="btn-fermer-annonce" type="button">Plus tard</button>
+    </div>
+  </section>
+
+  <!-- Carte intégrée -->
+  <section class="plein-ecran carte" id="carte" hidden aria-label="Carte du trésor">
+    <div id="carte-leaflet"></div>
+    <p class="carte-distance" id="carte-distance" aria-live="polite">Recherche de ta position…</p>
+    <div class="carte-boutons">
+      <button class="bouton-rond" id="btn-recentrer" type="button">Recentrer</button>
+      <button class="bouton-rond" id="btn-fermer-carte" type="button">Fermer</button>
+    </div>
+  </section>
+
+  <!-- Arrivée sur le lieu -->
+  <section class="plein-ecran annonce trouve" id="trouve" hidden>
+    <div class="annonce-contenu">
+      <svg class="coffre coffre-ouvert" viewBox="0 0 120 110" aria-hidden="true">
+        <path d="M14 40 L24 6 L96 6 L106 40 Z" fill="#a0522d" stroke="#3b2a1a" stroke-width="5" stroke-linejoin="round"/>
+        <ellipse cx="60" cy="48" rx="44" ry="10" fill="#f2b134"/>
+        <circle cx="42" cy="44" r="7" fill="#ffd566" stroke="#b8860b" stroke-width="2"/>
+        <circle cx="62" cy="42" r="7" fill="#ffd566" stroke="#b8860b" stroke-width="2"/>
+        <circle cx="80" cy="46" r="7" fill="#ffd566" stroke="#b8860b" stroke-width="2"/>
+        <rect x="12" y="50" width="96" height="48" rx="4" fill="#8b4513" stroke="#3b2a1a" stroke-width="5"/>
+        <rect x="52" y="56" width="16" height="20" rx="3" fill="#f2b134" stroke="#3b2a1a" stroke-width="4"/>
+      </svg>
+      <p class="annonce-titre">Indice débloqué !</p>
+      <p class="annonce-texte">Tu as trouvé le lieu du trésor. Montre ton téléphone au capitaine pour découvrir la photo à reproduire.</p>
+      <button class="gros-bouton bouton-scan" id="btn-fermer-trouve" type="button"><span>D'accord !</span></button>
     </div>
   </section>
 
@@ -89,6 +118,7 @@
   </section>
 
   <script src="js/vendor/jsQR.js"></script>
-  <script src="js/joueur.js?v=3"></script>
+  <script src="js/vendor/leaflet/leaflet.js"></script>
+  <script src="js/joueur.js?v=4"></script>
 </body>
 </html>
