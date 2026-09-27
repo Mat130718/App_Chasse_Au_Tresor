@@ -680,7 +680,7 @@
   // ---------- Mode pilote : la chasse en cours ----------
   // La partie est enregistrée dans le parcours (champ `partie`) pour
   // survivre à un rechargement de la page ou à un téléphone qui se verrouille.
-  // partie = { courante: idEtape, validees: [idEtape], historique: [{ validee }], terminee }
+  // partie = { courante: idEtape, indice: photo affichée ?, validees: [idEtape], historique: [{ validee }], terminee }
 
   // Nettoie la partie si des étapes ont été supprimées entre-temps.
   function partieValide(p) {
@@ -691,8 +691,10 @@
     partie.historique = partie.historique.filter((h) => ids.has(h.validee));
     if (!ids.has(partie.courante)) {
       const suivante = prochaineAFaire(p, partie, -1);
-      if (suivante) partie.courante = suivante.id;
-      else partie.terminee = true;
+      if (suivante) {
+        partie.courante = suivante.id;
+        partie.indice = false;
+      } else partie.terminee = true;
     }
     return partie;
   }
@@ -709,7 +711,7 @@
   }
 
   async function nouvellePartie() {
-    parcoursCourant.partie = { courante: parcoursCourant.etapes[0].id, validees: [], historique: [], terminee: false };
+    parcoursCourant.partie = { courante: parcoursCourant.etapes[0].id, validees: [], historique: [], terminee: false, indice: false };
     await sauver();
     vueJeu();
   }
@@ -787,38 +789,59 @@
     const etape = p.etapes[index];
     const dejaValidee = partie.validees.includes(etape.id);
 
-    const contenu = el(
-      'main',
-      { class: 'page page-jeu' },
-      el(
-        'div',
-        { class: 'jeu-entete' },
-        el('p', { class: 'jeu-progression' }, `Étape ${index + 1} sur ${total} · ${nbValidees} validée${nbValidees > 1 ? 's' : ''}`),
-        el('h2', {}, etape.nom),
-        dejaValidee && el('span', { class: 'pastille pastille-ok' }, 'Déjà validée')
-      ),
-      el('div', { class: 'qr-grand', role: 'img', 'aria-label': `QR code de l'étape ${index + 1}`, html: svgQr(contenuQr(etape)) }),
-      el('p', { class: 'aide centre' }, "L'enfant scanne ce QR code avec son téléphone."),
-      el(
-        'section',
-        { class: 'photo-modele' },
-        el('h3', { class: 'sous-titre' }, 'Photo à reproduire'),
-        etape.photo
-          ? el('img', { src: etape.photo, alt: `Photo modèle : ${etape.nom}` })
-          : el('p', { class: 'apercu-vide' }, "Pas de photo pour cette étape. Tu peux en ajouter une depuis l'écran du parcours.")
-      )
+    // Deux temps par étape : d'abord le QR code seul (l'enfant part vers le lieu),
+    // puis, une fois sur place, l'indice (la photo à reproduire) et la validation.
+    const indice = !!partie.indice;
+    const entete = el(
+      'div',
+      { class: 'jeu-entete' },
+      el('p', { class: 'jeu-progression' }, `Étape ${index + 1} sur ${total} · ${nbValidees} validée${nbValidees > 1 ? 's' : ''}`),
+      el('h2', {}, etape.nom),
+      dejaValidee && el('span', { class: 'pastille pastille-ok' }, 'Déjà validée')
     );
 
-    const boutonValider = dejaValidee
+    const contenu = indice
+      ? el(
+          'main',
+          { class: 'page page-jeu' },
+          entete,
+          el(
+            'section',
+            { class: 'photo-modele' },
+            el('h3', { class: 'sous-titre centre' }, 'Indice : la photo à reproduire'),
+            etape.photo
+              ? el('img', { src: etape.photo, alt: `Photo modèle : ${etape.nom}` })
+              : el('p', { class: 'apercu-vide' }, "Pas de photo pour cette étape. Tu peux en ajouter une depuis l'écran du parcours.")
+          ),
+          el('p', { class: 'aide centre' }, 'Quand la photo de l’enfant ressemble au modèle, valide-la pour afficher le QR code suivant.'),
+          el('button', { class: 'btn', onclick: () => changerIndice(false) }, '‹ Revoir le QR code')
+        )
+      : el(
+          'main',
+          { class: 'page page-jeu' },
+          entete,
+          el('div', { class: 'qr-grand', role: 'img', 'aria-label': `QR code de l'étape ${index + 1}`, html: svgQr(contenuQr(etape)) }),
+          el('p', { class: 'aide centre' }, "L'enfant scanne ce QR code pour trouver le lieu. Une fois sur place, touche « Indice »."),
+        );
+
+    const boutonAction = dejaValidee
       ? el('button', { class: 'btn btn-principal btn-large', onclick: allerProchaine }, 'Étape suivante ›')
-      : el('button', { class: 'btn btn-valider btn-large', onclick: validerPhoto }, '✓ Photo validée');
+      : indice
+        ? el('button', { class: 'btn btn-valider btn-large', onclick: validerPhoto }, '✓ Photo validée')
+        : el('button', { class: 'btn btn-principal btn-large', onclick: () => changerIndice(true) }, 'Indice');
 
     afficher(
       barre(p.nom, { retour: quitterJeu, actions: [boutonEtapes] }),
       contenu,
-      el('footer', { class: 'barre-jeu' }, boutonAnnuler, boutonValider)
+      el('footer', { class: 'barre-jeu' }, boutonAnnuler, boutonAction)
     );
     window.scrollTo(0, 0);
+  }
+
+  async function changerIndice(afficherIndice) {
+    parcoursCourant.partie.indice = afficherIndice;
+    await sauver();
+    vueJeu();
   }
 
   async function validerPhoto() {
@@ -831,6 +854,7 @@
     const suivante = prochaineAFaire(p, partie, index);
     if (suivante) partie.courante = suivante.id;
     else partie.terminee = true;
+    partie.indice = false;
     await sauver();
     toast(suivante ? `Bravo ! Étape ${index + 1} validée.` : 'Dernière étape validée !');
     vueJeu();
@@ -841,6 +865,7 @@
     const suivante = prochaineAFaire(p, p.partie, indexCourant(p, p.partie));
     if (suivante) p.partie.courante = suivante.id;
     else p.partie.terminee = true;
+    p.partie.indice = false;
     await sauver();
     vueJeu();
   }
@@ -854,6 +879,7 @@
     partie.validees = partie.validees.filter((id) => id !== derniere.validee);
     partie.courante = derniere.validee;
     partie.terminee = false;
+    partie.indice = true;
     await sauver();
     const numero = p.etapes.findIndex((e) => e.id === derniere.validee) + 1;
     toast(`Validation annulée : retour à l'étape ${numero}.`);
@@ -881,6 +907,7 @@
               onclick: async () => {
                 partie.courante = etape.id;
                 partie.terminee = false;
+                partie.indice = false;
                 await sauver();
                 fermer();
                 vueJeu();
