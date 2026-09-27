@@ -71,6 +71,7 @@
     etoile: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
     ampoule: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
     carte: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    agrandir: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
   };
   function ic(nom, classe = 'ic') {
     return el('span', {
@@ -339,17 +340,72 @@
     return L.divIcon({ className: `repere ${classe}`, html: `<span>${texte}</span>`, iconSize: [30, 30], iconAnchor: [15, 15] });
   }
 
-  // Aperçu du parcours : les étapes numérotées reliées par un pointillé.
+  // Les étapes numérotées reliées par un pointillé, cadrées sur la carte.
+  function tracerParcours(carte, etapes, { interactif = false, surEtape } = {}) {
+    fondDeCarte(carte);
+    const points = etapes.map((e) => [e.lat, e.lng]);
+    L.polyline(points, { color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0e5a6b', weight: 3, dashArray: '2 8', lineCap: 'round', interactive: false }).addTo(carte);
+    etapes.forEach((e, i) => {
+      const m = L.marker([e.lat, e.lng], { icon: repere(i + 1, e.photo ? '' : 'repere-vide'), keyboard: interactif, interactive: interactif, title: `${i + 1}. ${e.nom}` }).addTo(carte);
+      if (interactif) {
+        const bulle = el(
+          'div',
+          { class: 'bulle' },
+          el('strong', {}, `${i + 1}. ${e.nom}`),
+          el('span', {}, e.photo ? 'Photo prête' : 'Pas encore de photo'),
+          surEtape && el('button', { class: 'btn btn-petit btn-principal', onclick: () => surEtape(e) }, ic('crayon'), 'Modifier')
+        );
+        m.bindPopup(bulle, { closeButton: false, offset: [0, -10] });
+      }
+    });
+    const cadrer = () => (points.length === 1 ? carte.setView(points[0], 16) : carte.fitBounds(points, { padding: [36, 36] }));
+    cadrer();
+    return cadrer;
+  }
+
+  // Aperçu dans l'écran du parcours : fixe, un toucher l'ouvre en plein écran.
   function dessinerApercu(zone, etapes) {
     if (typeof L === 'undefined' || !zone.isConnected) return;
     const carte = L.map(zone, { zoomControl: false, attributionControl: true, dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false, boxZoom: false, keyboard: false, tap: false });
     cartes.push(carte);
-    fondDeCarte(carte);
-    const points = etapes.map((e) => [e.lat, e.lng]);
-    L.polyline(points, { color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0e5a6b', weight: 3, dashArray: '2 8', lineCap: 'round' }).addTo(carte);
-    etapes.forEach((e, i) => L.marker([e.lat, e.lng], { icon: repere(i + 1, e.photo ? '' : 'repere-vide'), keyboard: false, interactive: false }).addTo(carte));
-    if (points.length === 1) carte.setView(points[0], 16);
-    else carte.fitBounds(points, { padding: [28, 28] });
+    tracerParcours(carte, etapes);
+  }
+
+  // Carte en plein écran : déplacer, zoomer, toucher une étape pour voir son nom.
+  function ouvrirCartePleinEcran(etapes, surEtape) {
+    if (typeof L === 'undefined') return;
+    const zone = el('div', { class: 'carte-plein' });
+    let carte = null;
+    const fermer = () => {
+      document.removeEventListener('keydown', clavier);
+      if (carte) {
+        carte.remove();
+        cartes = cartes.filter((c) => c !== carte);
+      }
+      voile.remove();
+    };
+    const clavier = (e) => e.key === 'Escape' && fermer();
+    let cadrer = () => {};
+    const voile = el(
+      'div',
+      { class: 'voile-carte', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Carte du parcours' },
+      zone,
+      el(
+        'div',
+        { class: 'carte-plein-haut' },
+        el('button', { class: 'btn-rond btn-flottant', 'aria-label': 'Fermer la carte', onclick: fermer }, ic('fermer')),
+        el('button', { class: 'btn btn-petit btn-flottant-texte', onclick: () => cadrer() }, ic('viser'), 'Tout voir')
+      )
+    );
+    document.body.append(voile);
+    document.addEventListener('keydown', clavier);
+    carte = L.map(zone, { zoomControl: false, attributionControl: true, tap: false });
+    L.control.zoom({ position: 'bottomright', zoomInTitle: 'Zoomer', zoomOutTitle: 'Dézoomer' }).addTo(carte);
+    cartes.push(carte);
+    cadrer = tracerParcours(carte, etapes, {
+      interactif: true,
+      surEtape: surEtape && ((e) => (fermer(), surEtape(e))),
+    });
   }
 
   // ---------- Installation sur le téléphone ----------
@@ -637,8 +693,13 @@
 
     let zoneCarte = null;
     if (p.etapes.length > 0) {
-      zoneCarte = el('div', { class: 'apercu-carte', role: 'img', 'aria-label': 'Carte du parcours' });
-      contenu.append(zoneCarte);
+      zoneCarte = el('div', { class: 'apercu-carte' });
+      const boutonCarte = el(
+        'button',
+        { class: 'apercu-carte-bouton', 'aria-label': 'Ouvrir la carte en plein écran', onclick: () => ouvrirCartePleinEcran(p.etapes, (e) => vueEtape(e.id)) },
+        el('span', { class: 'apercu-agrandir' }, ic('agrandir'), 'Agrandir')
+      );
+      contenu.append(el('div', { class: 'apercu-cadre' }, zoneCarte, boutonCarte));
     }
 
     contenu.append(

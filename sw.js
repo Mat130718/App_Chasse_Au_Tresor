@@ -1,14 +1,14 @@
 // Service worker : permet d'ouvrir l'application sans réseau (dans un parc,
 // en forêt…). Le réseau reste prioritaire pour toujours servir la dernière
 // version ; la copie locale ne sert qu'en secours.
-const CACHE = 'chasse-v2';
+const CACHE = 'chasse-v3';
 const ESSENTIELS = [
   './',
   'pilote.html',
   'joueur.html',
-  'css/pilote.css?v=5',
+  'css/pilote.css?v=6',
   'css/joueur.css?v=10',
-  'js/pilote.js?v=5',
+  'js/pilote.js?v=6',
   'js/stockage.js?v=3',
   'js/joueur.js?v=10',
   'js/vendor/qrcode.js',
