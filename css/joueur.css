@@ -173,3 +173,4 @@ body {
 .photo img { flex: 1; min-height: 0; width: 100%; max-width: 480px; object-fit: contain; border: 6px solid var(--parchemin); border-radius: 16px; background: #000; }
 .photo-boutons { display: flex; gap: 12px; width: 100%; max-width: 480px; }
 .photo-boutons .gros-bouton { justify-content: center; min-height: 64px; font-size: 1.2rem; }
+.version { margin: 0; text-align: center; font-size: 0.75rem; opacity: 0.5; }
