@@ -41,7 +41,8 @@
   }
 
   function lienMaps(d) {
-    return `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lng}&travelmode=walking`;
+    // Épingle seule sur la carte, sans itinéraire : l'enfant choisit son chemin.
+    return `https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lng}`;
   }
 
   function memeDestination(a, b) {
@@ -81,7 +82,7 @@
     $('annonce-titre').textContent = dejaConnue ? 'Même destination !' : 'Nouvelle destination !';
     $('annonce-texte').textContent = dejaConnue
       ? "C'est toujours le même trésor. Continue à suivre la carte."
-      : "Le trésor t'attend. Suis la carte avec un adulte.";
+      : "Le trésor t'attend. Trouve ton chemin sur la carte, avec un adulte.";
     $('lien-maps').href = lienMaps(d);
     $('annonce').hidden = false;
   }
