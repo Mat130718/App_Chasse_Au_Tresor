@@ -1,0 +1,175 @@
+/* Téléphone enfant : univers pirate, gros boutons, peu d'éléments. */
+
+:root {
+  --mer: #0b4f6c;
+  --mer-profonde: #083a50;
+  --parchemin: #f6e7c1;
+  --parchemin-bord: #c89b5a;
+  --or: #f2b134;
+  --rouge: #d1495b;
+  --vert: #3a9d5d;
+  --encre: #3b2a1a;
+  --titre: 'Luckiest Guy', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif;
+  --texte: 'Nunito', 'Trebuchet MS', system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.08) 0 18%, transparent 19%),
+    radial-gradient(circle at 85% 90%, rgba(255, 255, 255, 0.06) 0 22%, transparent 23%),
+    linear-gradient(180deg, var(--mer) 0%, var(--mer-profonde) 100%);
+  background-attachment: fixed;
+  color: var(--parchemin);
+  font-family: var(--texte);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+:focus-visible { outline: 4px solid var(--or); outline-offset: 3px; }
+
+.ecran {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.titre { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.titre h1 {
+  margin: 0;
+  font-family: var(--titre);
+  font-weight: 400;
+  font-size: 2.1rem;
+  letter-spacing: 0.02em;
+  color: var(--or);
+  text-shadow: 0 3px 0 var(--encre);
+  text-wrap: balance;
+}
+.boussole { width: 56px; height: 56px; flex: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .boussole path { transform-origin: 50px 50px; animation: aiguille 6s ease-in-out infinite; }
+  @keyframes aiguille { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(14deg); } }
+}
+
+.parchemin {
+  padding: 18px 20px;
+  border: 4px solid var(--parchemin-bord);
+  border-radius: 18px 6px 18px 6px;
+  background: var(--parchemin);
+  color: var(--encre);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+}
+.parchemin p { margin: 0; }
+.parchemin-titre { font-family: var(--titre); font-size: 1.5rem; color: var(--rouge); margin-bottom: 6px !important; }
+
+.actions { display: flex; flex-direction: column; gap: 14px; margin-top: auto; }
+
+.gros-bouton {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 84px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 22px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+  font-family: var(--titre);
+  font-weight: 400;
+  font-size: 1.45rem;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.gros-bouton svg { width: 48px; height: 48px; flex: none; }
+.gros-bouton:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3); }
+.gros-bouton:disabled { opacity: 0.4; cursor: default; }
+.bouton-scan { background: var(--or); color: var(--encre); }
+.bouton-carte { background: var(--rouge); color: #fff; }
+.bouton-photo { background: var(--vert); color: #fff; }
+.bouton-retour { background: var(--parchemin); color: var(--encre); }
+
+/* Écrans plein écran */
+.plein-ecran {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  background: var(--mer-profonde);
+  text-align: center;
+}
+
+.scanner { background: #000; padding: 0; }
+.scanner video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.viseur {
+  position: relative;
+  width: min(70vw, 300px);
+  aspect-ratio: 1;
+  max-width: 100%;
+  border: 6px solid var(--or);
+  border-radius: 24px;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.45);
+}
+.scanner-aide {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: calc(24px + env(safe-area-inset-top, 0px));
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--parchemin);
+  color: var(--encre);
+}
+.bouton-fermer {
+  position: absolute;
+  left: 50%;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  min-width: 160px;
+  min-height: 56px;
+  padding: 10px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--parchemin);
+  color: var(--encre);
+  font: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.annonce-contenu { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 420px; }
+.coffre { width: 140px; height: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  .annonce:not([hidden]) .coffre { animation: sautille 0.9s ease-out; }
+  @keyframes sautille { 0% { transform: scale(0.4) rotate(-10deg); } 60% { transform: scale(1.15) rotate(4deg); } 100% { transform: scale(1); } }
+}
+.annonce-titre { margin: 0; font-family: var(--titre); font-size: 2rem; color: var(--or); text-shadow: 0 3px 0 var(--encre); text-wrap: balance; }
+.annonce-texte { margin: 0; font-size: 1.15rem; }
+.annonce .gros-bouton { justify-content: center; text-align: center; }
+.bouton-texte { min-height: 48px; padding: 8px 16px; border: 0; background: none; color: var(--parchemin); font: inherit; text-decoration: underline; cursor: pointer; }
+
+.photo { justify-content: flex-start; }
+.photo img { flex: 1; min-height: 0; width: 100%; max-width: 480px; object-fit: contain; border: 6px solid var(--parchemin); border-radius: 16px; background: #000; }
+.photo-boutons { display: flex; gap: 12px; width: 100%; max-width: 480px; }
+.photo-boutons .gros-bouton { justify-content: center; min-height: 64px; font-size: 1.2rem; }
