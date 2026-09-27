@@ -172,7 +172,7 @@
     const zone = $('carte-distance');
     if (!d) return;
     if (d.trouve) {
-      zone.textContent = 'Tu as trouvé le trésor ! Montre ton téléphone au capitaine.';
+      zone.textContent = 'Tu es arrivé à bon port ! Montre ton téléphone au capitaine.';
     } else if (erreurPosition) {
       zone.textContent = erreurPosition;
     } else if (!dernierePosition) {
